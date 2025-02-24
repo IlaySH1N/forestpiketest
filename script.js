@@ -4,7 +4,8 @@ function switchToCategory(category) {
     switchTab('category');
     document.getElementById('category-title').textContent = category;
     const performersList = document.getElementById('performers-list');
-    performersList.innerHTML = '<div class="animate-spin w-8 h-8 border-4 border-t-teal-500 border-gray-300 rounded-full mx-auto"></div>';
+    const companies = JSON.parse(localStorage.getItem('companies') || '[]');
+    performersList.innerHTML = '<div class="spinner"></div>';
 
     setTimeout(() => {
         performersList.innerHTML = `
@@ -13,22 +14,16 @@ function switchToCategory(category) {
                 <button onclick="filterPerformers('all')" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Все</button>
             </div>
             <div id="performer-list" class="space-y-4">
-                <div onclick="showPerformerDetails('Иван', 'Дизайнер, опыт 5 лет', 'ivan@example.com', 4)" class="card cursor-pointer p-4 flex items-center hover:bg-gray-700 transition subscribed">
-                    <img src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full mr-3" alt="Avatar">
-                    <div class="flex-1">
-                        <p class="font-semibold">Иван <i class="ti ti-crown text-yellow-500 text-sm ml-1"></i></p>
-                        <p class="text-sm text-gray-400">Дизайнер, опыт 5 лет</p>
+                ${companies.filter(c => c.category === category).map((company, index) => `
+                    <div class="card cursor-pointer p-4 flex justify-between items-center hover:bg-gray-700 transition ${company.premium ? 'subscribed' : ''}">
+                        <div>
+                            <p class="font-semibold">${company.name} ${company.premium ? '<i class="ti ti-crown text-yellow-500 text-sm ml-1"></i>' : ''}</p>
+                            <p class="text-sm text-gray-400">${company.description}</p>
+                            <p class="text-sm text-gray-400">Рейтинг: ${company.rating || 'Нет оценок'}</p>
+                        </div>
+                        <button onclick="selectPerformer('${company.id}')" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Выбрать</button>
                     </div>
-                    <div class="text-yellow-500 text-sm">★★★★☆</div>
-                </div>
-                <div onclick="showPerformerDetails('Петр', 'Начинающий дизайнер', 'petr@example.com', 3)" class="card cursor-pointer p-4 flex items-center hover:bg-gray-700 transition">
-                    <img src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full mr-3" alt="Avatar">
-                    <div class="flex-1">
-                        <p class="font-semibold">Петр</p>
-                        <p class="text-sm text-gray-400">Начинающий дизайнер</p>
-                    </div>
-                    <div class="text-yellow-500 text-sm">★★★☆☆</div>
-                </div>
+                `).join('') || '<p class="text-center">Исполнителей в этой категории пока нет</p>'}
             </div>
         `;
         let delay = 0;
@@ -51,30 +46,30 @@ function filterPerformers(type) {
     });
 }
 
-function showPerformerDetails(name, description, contact, rating) {
-    const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
-    modal.innerHTML = `
-        <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
-            <h3 class="text-xl font-semibold mb-4">${name}</h3>
-            <p class="mb-2">${description}</p>
-            <p class="text-sm text-yellow-500 mb-2">${stars}</p>
-            <p class="text-sm text-gray-400">Контакт: ${contact}</p>
-            <div class="flex space-x-2 mt-4">
-                <button onclick="window.Telegram.WebApp.openTelegramLink('https://t.me/${contact.split('@')[1]}')" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Написать в Telegram</button>
-                <button onclick="navigator.clipboard.writeText('${contact}'); showNotification('Скопировано!')" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Скопировать</button>
-            </div>
-            <button onclick="this.parentElement.parentElement.remove()" class="mt-4 py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Закрыть</button>
-        </div>
-    `;
-    document.body.appendChild(modal);
+function selectPerformer(companyId) {
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const selectedTaskIndex = tasks.findIndex(task => task.status === 'Открыто' && task.creatorId === Telegram.WebApp.initDataUnsafe.user.id);
+    if (selectedTaskIndex !== -1) {
+        tasks[selectedTaskIndex].status = 'В работе';
+        tasks[selectedTaskIndex].performerId = companyId;
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        showNotification(`Исполнитель с ID ${companyId} назначен на задачу!`);
+        updateTaskList();
+        switchTab('tasks');
+    } else {
+        showNotification('Нет открытых задач для назначения исполнителя!');
+    }
 }
 
 function createTask() {
-    const role = localStorage.getItem('role') || 'client';
-    if (role === 'performer') {
-        showNotification('Исполнители не могут создавать задания!');
+    const role = localStorage.getItem('role');
+    if (!role) {
+        showNotification('Пожалуйста, зарегистрируйтесь!');
+        switchTab('register');
+        return;
+    }
+    if (role !== 'client') {
+        showNotification('Только заказчики могут создавать задания!');
         return;
     }
     document.getElementById('task-modal').classList.remove('hidden');
@@ -101,7 +96,16 @@ function submitTask() {
     if (task && category) {
         showNotification(`Задание "${task}" создано в категории "${category}"!`);
         const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-        const newTask = { text: task, category: category, responses: 0, views: 0, tags: tags };
+        const newTask = { 
+            text: task, 
+            category: category, 
+            responses: 0, 
+            views: 0, 
+            tags: tags, 
+            creatorId: Telegram.WebApp.initDataUnsafe.user.id, 
+            status: 'Открыто', 
+            performerId: null 
+        };
         tasks.push(newTask);
         localStorage.setItem('tasks', JSON.stringify(tasks));
         const taskCount = document.getElementById('task-count');
@@ -118,35 +122,73 @@ function updateTaskList() {
     const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
     const taskList = document.getElementById('task-list');
     const myTasksList = document.getElementById('my-tasks-list');
-    const role = localStorage.getItem('role') || 'client';
+    const performerTasks = document.getElementById('performer-tasks');
+    const role = localStorage.getItem('role');
+    const userId = Telegram.WebApp.initDataUnsafe.user ? Telegram.WebApp.initDataUnsafe.user.id : null;
 
-    taskList.innerHTML = tasks.length ? tasks.map((task, index) => {
-        task.views = task.views ? task.views + 1 : 1;
-        localStorage.setItem('tasks', JSON.stringify(tasks));
-        return `
-            <div class="card p-4 flex justify-between items-center">
-                <div>
-                    <p>${task.text}</p>
-                    <p class="text-sm text-gray-400">Категория: ${task.category} | Откликов: ${task.responses} | Просмотров: ${task.views}</p>
-                    <div>${task.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>
+    taskList.innerHTML = '<div class="spinner"></div>';
+    performerTasks.innerHTML = '<div class="spinner"></div>';
+    myTasksList.innerHTML = '<div class="spinner"></div>';
+
+    setTimeout(() => {
+        // Список всех задач (для заказчиков и исполнителей)
+        taskList.innerHTML = tasks.length ? tasks.map((task, index) => {
+            task.views = task.views ? task.views + 1 : 1;
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            const statusClass = task.status === 'Открыто' ? 'status-open' : task.status === 'В работе' ? 'status-in-progress' : 'status-completed';
+            return `
+                <div class="card p-4 flex justify-between items-center">
+                    <div>
+                        <p>${task.text}</p>
+                        <p class="text-sm text-gray-400">Категория: ${task.category} | Откликов: ${task.responses} | Просмотров: ${task.views}</p>
+                        <p class="text-sm text-gray-400"><span class="status-dot ${statusClass}"></span> Статус: ${task.status}</p>
+                        <div>${task.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>
+                    </div>
+                    ${role === 'client' && task.status === 'Открыто' ? `<button onclick="switchToCategory('${task.category}')" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Выбрать исполнителя</button>` : ''}
+                    ${role === 'client' && task.status === 'В работе' ? `<button onclick="completeTask(${index})" class="py-2 px-4 bg-green-500 text-white rounded-lg">Завершить</button>` : ''}
+                    ${role === 'client' && task.status === 'Завершено' && !task.rating ? `<button onclick="openRatingModal(${index})" class="py-2 px-4 bg-yellow-500 text-white rounded-lg">Оценить</button>` : ''}
+                    ${role === 'performer' && task.status === 'Открыто' ? `<button onclick="respondToTask(${index})" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Откликнуться</button>` : ''}
                 </div>
-                ${role === 'performer' ? `<button onclick="respondToTask(${index})" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Откликнуться</button>` : ''}
-            </div>
-        `;
-    }).join('') : '<p class="text-center">Заданий пока нет</p>';
+            `;
+        }).join('') : '<p class="text-center">Заданий пока нет</p>';
 
-    myTasksList.innerHTML = tasks.length ? tasks.map((task, index) => `
-        <div class="card p-4 flex justify-between items-center">
-            <div>
-                <p>${task.text}</p>
-                <p class="text-sm text-gray-400">Категория: ${task.category} | Откликов: ${task.responses} | Просмотров: ${task.views}</p>
-                <div>${task.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>
-            </div>
-            ${role === 'client' ? `<button onclick="deleteTask(${index})" class="py-2 px-4 bg-red-500 text-white rounded-lg">Удалить</button>` : ''}
-        </div>
-    `).join('') : '<p class="text-center">Заданий пока нет</p>';
+        // Мои задачи (для заказчиков)
+        myTasksList.innerHTML = tasks.length ? tasks.filter(task => task.creatorId === userId).map((task, index) => {
+            const statusClass = task.status === 'Открыто' ? 'status-open' : task.status === 'В работе' ? 'status-in-progress' : 'status-completed';
+            const company = JSON.parse(localStorage.getItem('companies') || '[]').find(c => c.id === task.performerId);
+            return `
+                <div class="card p-4 flex justify-between items-center">
+                    <div>
+                        <p>${task.text}</p>
+                        <p class="text-sm text-gray-400">Категория: ${task.category} | Откликов: ${task.responses} | Просмотров: ${task.views}</p>
+                        <p class="text-sm text-gray-400"><span class="status-dot ${statusClass}"></span> Статус: ${task.status}</p>
+                        ${task.performerId ? `<p class="text-sm text-gray-400">Исполнитель: ${company ? company.name : 'Неизвестен'}</p>` : ''}
+                        <div>${task.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>
+                    </div>
+                    ${task.status === 'Открыто' ? `<button onclick="deleteTask(${index})" class="py-2 px-4 bg-red-500 text-white rounded-lg">Удалить</button>` : ''}
+                    ${task.status === 'В работе' && task.performerId ? `<button onclick="chatWithPerformer('${task.performerId}')" class="py-2 px-4 bg-blue-500 text-white rounded-lg">Чат</button>` : ''}
+                </div>
+            `;
+        }).join('') : '<p class="text-center">Ваши задачи отсутствуют</p>';
 
-    updateStats();
+        // Доступные задачи (для исполнителей)
+        performerTasks.innerHTML = tasks.length ? tasks.filter(task => task.status === 'Открыто').map((task, index) => {
+            const statusClass = 'status-open';
+            return `
+                <div class="card p-4 flex justify-between items-center">
+                    <div>
+                        <p>${task.text}</p>
+                        <p class="text-sm text-gray-400">Категория: ${task.category} | Откликов: ${task.responses} | Просмотров: ${task.views}</p>
+                        <p class="text-sm text-gray-400"><span class="status-dot ${statusClass}"></span> Статус: ${task.status}</p>
+                        <div>${task.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>
+                    </div>
+                    <button onclick="respondToTask(${index})" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Откликнуться</button>
+                </div>
+            `;
+        }).join('') : '<p class="text-center">Доступных задач нет</p>';
+
+        updateStats();
+    }, 1000);
 }
 
 function respondToTask(index) {
@@ -168,49 +210,136 @@ function deleteTask(index) {
     updateStats();
 }
 
-function updateStats() {
+function completeTask(index) {
     const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-    const role = localStorage.getItem('role') || 'client';
-    const taskStats = document.getElementById('task-stats');
-    const myTasksStats = document.getElementById('my-tasks-stats');
-    const profileStats = document.getElementById('profile-stats');
-
-    const totalResponses = tasks.reduce((sum, task) => sum + task.responses, 0);
-    const totalViews = tasks.reduce((sum, task) => sum + task.views, 0);
-
-    if (role === 'client') {
-        taskStats.innerHTML = `Всего задач: ${tasks.length} | Просмотров: ${totalViews} | Откликов: ${totalResponses}`;
-        myTasksStats.innerHTML = `Ваши задачи: ${tasks.length} | Просмотров: ${totalViews} | Откликов: ${totalResponses}`;
-        profileStats.innerHTML = `Создано задач: ${tasks.length} | Просмотров: ${totalViews} | Откликов: ${totalResponses}`;
-    } else {
-        taskStats.innerHTML = `Доступно задач: ${tasks.length} | Всего просмотров: ${totalViews} | Всего откликов: ${totalResponses}`;
-        myTasksStats.innerHTML = `Ваши отклики: ${totalResponses}`;
-        profileStats.innerHTML = `Ваши отклики: ${totalResponses}`;
-    }
-}
-
-function showProfile() {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    document.getElementById('profile-name').value = user.name || '';
-    document.getElementById('profile-email').value = user.email || '';
-    document.getElementById('profile-role').value = localStorage.getItem('role') || 'client';
-    switchTab('profile');
+    tasks[index].status = 'Завершено';
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    showNotification(`Задание "${tasks[index].text}" завершено!`);
+    updateTaskList();
     updateStats();
 }
 
-function saveProfile() {
-    const name = document.getElementById('profile-name').value;
-    const email = document.getElementById('profile-email').value;
-    const role = document.getElementById('profile-role').value;
+function openRatingModal(index) {
+    window.currentTaskIndex = index;
+    document.getElementById('rating-modal').classList.remove('hidden');
+}
+
+function ratePerformer(rating) {
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const task = tasks[window.currentTaskIndex];
+    task.rating = rating;
+    const companies = JSON.parse(localStorage.getItem('companies') || '[]');
+    const company = companies.find(c => c.id === task.performerId);
+    if (company) {
+        company.rating = company.rating ? Math.round((company.rating + rating) / 2) : rating;
+        localStorage.setItem('companies', JSON.stringify(companies));
+    }
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    showNotification(`Исполнитель оценён на ${rating} звёзд!`);
+    closeRatingModal();
+    updateTaskList();
+}
+
+function closeRatingModal() {
+    document.getElementById('rating-modal').classList.add('hidden');
+}
+
+function chatWithPerformer(performerId) {
+    const companies = JSON.parse(localStorage.getItem('companies') || '[]');
+    const company = companies.find(c => c.id === performerId);
+    if (company) {
+        const telegramLink = `https://t.me/${company.email.split('@')[1]}`;
+        window.Telegram.WebApp.openTelegramLink(telegramLink);
+    } else {
+        showNotification('Контакт исполнителя не найден!');
+    }
+}
+
+function updateStats() {
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const companies = JSON.parse(localStorage.getItem('companies') || '[]');
+    const role = localStorage.getItem('role');
+    const userId = Telegram.WebApp.initDataUnsafe.user ? Telegram.WebApp.initDataUnsafe.user.id : null;
+    const taskStats = document.getElementById('task-stats');
+    const myTasksStats = document.getElementById('my-tasks-stats');
+
+    const totalResponses = tasks.reduce((sum, task) => sum + task.responses, 0);
+    const totalViews = tasks.reduce((sum, task) => sum + task.views, 0);
+    document.getElementById('performer-count').textContent = companies.length;
+
+    if (role === 'client') {
+        taskStats.innerHTML = `Всего задач: ${tasks.length} | Просмотров: ${totalViews} | Откликов: ${totalResponses}`;
+        myTasksStats.innerHTML = `Ваши задачи: ${tasks.filter(t => t.creatorId === userId).length} | Просмотров: ${totalViews} | Откликов: ${totalResponses}`;
+    } else if (role === 'performer') {
+        taskStats.innerHTML = `Доступно задач: ${tasks.length} | Всего просмотров: ${totalViews} | Всего откликов: ${totalResponses}`;
+        myTasksStats.innerHTML = `Ваши отклики: ${totalResponses}`;
+    }
+}
+
+function registerUser() {
+    const name = document.getElementById('reg-name').value;
+    const email = document.getElementById('reg-email').value;
+    const role = document.getElementById('reg-role').value;
+    const userId = Telegram.WebApp.initDataUnsafe.user ? Telegram.WebApp.initDataUnsafe.user.id : null;
+
+    if (!userId) {
+        showNotification('Ошибка: Telegram ID не найден!');
+        return;
+    }
+
     if (name && email && role) {
-        localStorage.setItem('user', JSON.stringify({ name, email }));
+        const userData = { id: userId, name, email, role };
+        localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('role', role);
-        showNotification('Профиль сохранён!');
-        switchTab('main');
-        updateTaskList();
+
+        if (role === 'performer') {
+            const category = document.getElementById('reg-category').value;
+            const description = document.getElementById('reg-description').value;
+            if (category && description) {
+                const companies = JSON.parse(localStorage.getItem('companies') || '[]');
+                companies.push({ id: userId, name, description, category, premium: false, rating: null });
+                localStorage.setItem('companies', JSON.stringify(companies));
+                showNotification(`Исполнитель "${name}" зарегистрирован в категории "${category}"!`);
+            } else {
+                showNotification('Заполните все поля для исполнителя!');
+                return;
+            }
+        } else {
+            showNotification(`Заказчик "${name}" зарегистрирован!`);
+        }
+
+        document.getElementById('reg-name').value = '';
+        document.getElementById('reg-email').value = '';
+        document.getElementById('reg-description').value = '';
+        switchTab(getMainTab());
+        updateUI();
     } else {
         showNotification('Заполните все поля!');
     }
+}
+
+function getMainTab() {
+    return localStorage.getItem('role') === 'performer' ? 'performer-main' : 'client-main';
+}
+
+function updateUI() {
+    const role = localStorage.getItem('role');
+    const clientMain = document.getElementById('client-main');
+    const performerMain = document.getElementById('performer-main');
+    if (role === 'performer') {
+        clientMain.classList.add('hidden');
+        performerMain.classList.remove('hidden');
+        document.getElementById('performer-fields').classList.remove('hidden');
+    } else if (role === 'client') {
+        clientMain.classList.remove('hidden');
+        performerMain.classList.add('hidden');
+        document.getElementById('performer-fields').classList.add('hidden');
+    } else {
+        clientMain.classList.add('hidden');
+        performerMain.classList.add('hidden');
+    }
+    updateTaskList();
+    updateStats();
 }
 
 document.getElementById('search').addEventListener('input', (e) => {
@@ -222,18 +351,24 @@ document.getElementById('search').addEventListener('input', (e) => {
     });
 });
 
-document.getElementById('logo').addEventListener('click', () => switchTab('main'));
+document.getElementById('reg-role').addEventListener('change', (e) => {
+    const role = e.target.value;
+    document.getElementById('performer-fields').classList.toggle('hidden', role !== 'performer');
+});
+
+document.getElementById('logo').addEventListener('click', () => switchTab(getMainTab()));
 document.getElementById('subscription-btn').addEventListener('click', () => switchTab('subscription'));
 
 window.addEventListener('load', () => {
     const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
     document.getElementById('task-count').textContent = tasks.length;
-    updateTaskList();
+    updateUI();
 
     const user = window.Telegram.WebApp.initDataUnsafe.user;
     if (user && !localStorage.getItem('user')) {
-        localStorage.setItem('user', JSON.stringify({ name: user.first_name, email: `${user.id}@telegram.com` }));
-        localStorage.setItem('role', 'client');
+        switchTab('register');
+    } else {
+        switchTab(getMainTab());
     }
 
     if (!localStorage.getItem('onboarding')) {
@@ -242,22 +377,22 @@ window.addEventListener('load', () => {
 });
 
 const tabs = {
-    main: document.getElementById('tab-main'),
-    profile: document.getElementById('tab-profile'),
+    'client-main': document.getElementById('tab-main'),
+    'performer-main': document.getElementById('tab-main'),
+    register: document.getElementById('tab-profile'),
     subscription: document.getElementById('tab-subscription'),
     tasks: document.getElementById('tab-tasks'),
     about: document.getElementById('tab-about'),
-    category: document.getElementById('category-content'),
-    profileTab: document.getElementById('profile-content')
+    category: document.getElementById('category-content')
 };
 const contents = {
-    main: document.getElementById('main-content'),
-    profile: document.getElementById('profile-content'),
+    'client-main': document.getElementById('client-main'),
+    'performer-main': document.getElementById('performer-main'),
+    register: document.getElementById('register-content'),
     subscription: document.getElementById('subscription-content'),
     tasks: document.getElementById('tasks-content'),
     about: document.getElementById('about-content'),
-    category: document.getElementById('category-content'),
-    profileTab: document.getElementById('profile-content')
+    category: document.getElementById('category-content')
 };
 
 function switchTab(activeTab) {
@@ -285,9 +420,9 @@ function startOnboarding() {
     onboarding.classList.remove('hidden');
     const steps = [
         { title: 'Добро пожаловать!', text: 'Это ваше первое знакомство с платформой.' },
-        { title: 'Создание заданий', text: 'Нажмите "Создать задание", чтобы найти исполнителей.' },
-        { title: 'Профиль', text: 'Настройте свой профиль через кнопку внизу.' },
-        { title: 'Premium', text: 'Оформите Premium для дополнительных возможностей.' }
+        { title: 'Регистрация', text: 'Зарегистрируйтесь как заказчик или исполнитель.' },
+        { title: 'Создание заданий', text: 'Заказчики могут создавать задачи для поиска исполнителей.' },
+        { title: 'Отклики', text: 'Исполнители могут откликаться на задачи или быть выбранными из списка.' }
     ];
     let step = 0;
 
