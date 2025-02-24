@@ -84,6 +84,10 @@ function createTask() {
 function editTask(index) {
     const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
     const task = tasks[index];
+    if(task.creatorId !== Telegram.WebApp.initDataUnsafe.user.id) {
+        showNotification('Вы можете редактировать только свои задачи!');
+        return;
+    }
     if (task.status !== 'Открыто') {
         showNotification('Можно редактировать только открытые задачи!');
         return;
@@ -174,7 +178,7 @@ function updateTaskList() {
     const filterTag = document.getElementById('filter-tag').value;
     const sortOption = document.getElementById('sort-tasks').value;
 
-    let filteredTasks = tasks;
+    let filteredTasks = tasks.slice(); // Копируем массив для фильтрации и сортировки
     if (filterCategory) {
         filteredTasks = filteredTasks.filter(task => task.category === filterCategory);
     }
@@ -198,7 +202,8 @@ function updateTaskList() {
 
     setTimeout(() => {
         // Список всех задач (с фильтрацией и сортировкой)
-        taskList.innerHTML = filteredTasks.length ? filteredTasks.map((task, index) => {
+        taskList.innerHTML = filteredTasks.length ? filteredTasks.map((task) => {
+            const index = tasks.findIndex(t => t.text === task.text && t.createdAt === task.createdAt && t.creatorId === task.creatorId);
             task.views = task.views ? task.views + 1 : 1;
             localStorage.setItem('tasks', JSON.stringify(tasks));
             const statusClass = task.status === 'Открыто' ? 'status-open' : task.status === 'В работе' ? 'status-in-progress' : 'status-completed';
@@ -219,7 +224,8 @@ function updateTaskList() {
         }).join('') : '<p class="text-center">Заданий нет</p>';
 
         // Мои задачи (для заказчиков)
-        myTasksList.innerHTML = tasks.length ? tasks.filter(task => task.creatorId === userId).map((task, index) => {
+        myTasksList.innerHTML = tasks.length ? tasks.filter(task => task.creatorId === userId).map((task) => {
+            const index = tasks.findIndex(t => t.text === task.text && t.createdAt === task.createdAt && t.creatorId === task.creatorId);
             const statusClass = task.status === 'Открыто' ? 'status-open' : task.status === 'В работе' ? 'status-in-progress' : 'status-completed';
             const company = JSON.parse(localStorage.getItem('companies') || '[]').find(c => c.id === task.performerId);
             return `
@@ -243,7 +249,8 @@ function updateTaskList() {
         }).join('') : '<p class="text-center">Ваши задачи отсутствуют</p>';
 
         // Доступные задачи (для исполнителей)
-        performerTasks.innerHTML = tasks.length ? tasks.filter(task => task.status === 'Открыто').map((task, index) => {
+        performerTasks.innerHTML = tasks.length ? tasks.filter(task => task.status === 'Открыто').map((task) => {
+            const index = tasks.findIndex(t => t.text === task.text && t.createdAt === task.createdAt && t.creatorId === task.creatorId);
             const statusClass = 'status-open';
             return `
                 <div class="card p-4 flex justify-between items-center">
@@ -313,6 +320,11 @@ function acceptResponse(index, performerId) {
 
 function deleteTask(index) {
     const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const task = tasks[index];
+    if(task.creatorId !== Telegram.WebApp.initDataUnsafe.user.id) {
+        showNotification('Вы можете удалять только свои задачи!');
+        return;
+    }
     tasks.splice(index, 1);
     localStorage.setItem('tasks', JSON.stringify(tasks));
     document.getElementById('task-count').textContent = tasks.length;
@@ -382,7 +394,7 @@ function updateStats() {
         myTasksStats.innerHTML = `Ваши задачи: ${tasks.filter(t => t.creatorId === userId).length} | Просмотров: ${totalViews} | Откликов: ${totalResponses}`;
     } else if (role === 'performer') {
         taskStats.innerHTML = `Доступно задач: ${tasks.length} | Всего просмотров: ${totalViews} | Всего откликов: ${totalResponses}`;
-        myTasksStats.innerHTML = `Ваши отклики: ${totalResponses}`;
+        myTasksStats.innerHTML = `Ваши отклики: ${tasks.filter(t => t.responders.includes(userId)).length}`;
     }
 }
 
@@ -436,17 +448,21 @@ function updateUI() {
     const role = localStorage.getItem('role');
     const clientMain = document.getElementById('client-main');
     const performerMain = document.getElementById('performer-main');
+    const registerContent = document.getElementById('register-content');
     if (role === 'performer') {
         clientMain.classList.add('hidden');
         performerMain.classList.remove('hidden');
+        registerContent.classList.add('hidden');
         document.getElementById('performer-fields').classList.remove('hidden');
     } else if (role === 'client') {
         clientMain.classList.remove('hidden');
         performerMain.classList.add('hidden');
+        registerContent.classList.add('hidden');
         document.getElementById('performer-fields').classList.add('hidden');
     } else {
         clientMain.classList.add('hidden');
         performerMain.classList.add('hidden');
+        registerContent.classList.remove('hidden');
     }
     updateTaskList();
     updateStats();
