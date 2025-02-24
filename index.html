@@ -211,7 +211,7 @@
             <button onclick="registerUser()" class="button w-full py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg">Зарегистрироваться</button>
         </div>
         <div id="category-content" class="hidden">
-            <button onclick="switchTab(getMainTab())" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg mb-4"><i class="ti ti-arrow-left mr-2"></i> Назад</button>
+            <button onclick="switchToCategory('Дизайн')" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg mb-4"><i class="ti ti-arrow-left mr-2"></i> Назад</button>
             <h2 id="category-title" class="text-2xl font-semibold mb-4"></h2>
             <div id="performers-list" class="space-y-4"></div>
         </div>
@@ -241,14 +241,34 @@
         </div>
         <div id="tasks-content" class="hidden">
             <h2 class="text-2xl font-semibold mb-4">Список заданий</h2>
+            <div class="mb-4 flex space-x-2">
+                <select id="filter-category" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" onchange="updateTaskList()">
+                    <option value="">Все категории</option>
+                    <option value="Дизайн">Дизайн</option>
+                    <option value="Фото студии">Фото студии</option>
+                    <option value="Карго">Карго</option>
+                    <option value="Блогеры">Блогеры</option>
+                    <option value="Сертификация">Сертификация</option>
+                    <option value="Фулфилмент">Фулфилмент</option>
+                    <option value="Менеджеры">Менеджеры</option>
+                    <option value="Байеры">Байеры</option>
+                </select>
+                <select id="filter-tag" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" onchange="updateTaskList()">
+                    <option value="">Все теги</option>
+                    <option value="Срочно">Срочно</option>
+                    <option value="Дизайн">Дизайн</option>
+                    <option value="Логистика">Логистика</option>
+                    <option value="Реклама">Реклама</option>
+                </select>
+            </div>
             <div id="task-stats" class="mb-4 text-sm text-gray-400"></div>
             <div id="task-list" class="space-y-4"></div>
         </div>
         <div id="about-content" class="hidden">
             <h2 class="text-2xl font-semibold mb-4">О нас</h2>
             <p class="mb-4">Marketplace Helper — это фриланс-биржа для интернет-магазинов и маркетплейсов. Мы соединяем заказчиков с исполнителями для выполнения задач по дизайну, логистике, рекламе и многому другому.</p>
-            <p class="mb-4">Для заказчиков: создавайте задания и выбирайте исполнителей из нашего списка.</p>
-            <p class="mb-4">Для исполнителей: регистрируйтесь и откликайтесь на задания.</p>
+            <p class="mb-4">Для заказчиков: создавайте, редактируйте и управляйте своими задачами.</p>
+            <p class="mb-4">Для исполнителей: откликайтесь на задания и предлагайте свои услуги.</p>
             <p class="text-sm">Наша миссия — упростить сотрудничество и ускорить рост вашего бизнеса!</p>
         </div>
     </div>
@@ -260,7 +280,7 @@
     </div>
     <div id="task-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
         <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
-            <h3 class="text-xl font-semibold mb-4">Создать задание</h3>
+            <h3 id="task-modal-title" class="text-xl font-semibold mb-4">Создать задание</h3>
             <select id="task-category" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md">
                 <option value="Дизайн">Дизайн</option>
                 <option value="Фото студии">Фото студии</option>
@@ -283,7 +303,7 @@
             </div>
             <div class="flex justify-end space-x-2">
                 <button onclick="closeModal()" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Отмена</button>
-                <button onclick="submitTask()" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Создать</button>
+                <button id="task-submit-btn" onclick="submitTask()" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Создать</button>
             </div>
         </div>
     </div>
