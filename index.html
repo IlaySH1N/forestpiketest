@@ -34,6 +34,10 @@
             50% { transform: scale(1.05); } 
             100% { transform: scale(1); } 
         }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
         .animate-in { animation: fadeInUp 0.5s ease-out forwards; }
         .slide-in { animation: slideIn 0.3s ease-out forwards; }
         .notification { animation: slideDown 0.3s ease-out; }
@@ -132,6 +136,19 @@
             margin-right: 4px; 
             margin-top: 4px; 
         }
+        .status-open { background: #10b981; }
+        .status-in-progress { background: #f59e0b; }
+        .status-completed { background: #6b7280; }
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+        .spinner { 
+            border: 4px solid #374151; 
+            border-top: 4px solid #60a5fa; 
+            border-radius: 50%; 
+            width: 24px; 
+            height: 24px; 
+            animation: spin 1s linear infinite; 
+            margin: 0 auto; 
+        }
     </style>
 </head>
 <body class="flex flex-col items-center justify-start p-4">
@@ -142,10 +159,11 @@
     <h1 class="text-3xl font-bold mb-6 text-center animate-in">Marketplace Helper</h1>
     <div class="w-full max-w-md p-4 bg-white bg-opacity-20 rounded-lg mb-4 flex justify-between">
         <div class="flex items-center"><i class="ti ti-list mr-2"></i> Заданий: <span id="task-count" class="ml-1 font-semibold">0</span></div>
-        <div class="flex items-center"><i class="ti ti-users mr-2"></i> Исполнителей: <span id="performer-count" class="ml-1 font-semibold">2</span></div>
+        <div class="flex items-center"><i class="ti ti-users mr-2"></i> Исполнителей: <span id="performer-count" class="ml-1 font-semibold">0</span></div>
     </div>
     <div id="content" class="w-full max-w-md">
-        <div id="main-content">
+        <!-- Интерфейс заказчика -->
+        <div id="client-main" class="hidden">
             <div class="w-full max-w-md mb-4 overflow-x-auto whitespace-nowrap">
                 <button onclick="switchToCategory('Дизайн')" class="inline-block py-2 px-4 bg-blue-500 text-white rounded-lg shadow-md mr-2"><i class="ti ti-brush mr-2"></i>Дизайн</button>
                 <button onclick="switchToCategory('Блогеры')" class="inline-block py-2 px-4 bg-blue-500 text-white rounded-lg shadow-md mr-2"><i class="ti ti-users mr-2"></i>Блогеры</button>
@@ -164,21 +182,38 @@
             </div>
             <button onclick="createTask()" class="button w-full max-w-md py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg mb-4">Создать задание</button>
         </div>
-        <div id="category-content" class="hidden">
-            <button onclick="switchTab('main')" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg mb-4"><i class="ti ti-arrow-left mr-2"></i> Назад</button>
-            <h2 id="category-title" class="text-2xl font-semibold mb-4"></h2>
-            <div id="performers-list" class="space-y-4"></div>
+        <!-- Интерфейс исполнителя -->
+        <div id="performer-main" class="hidden">
+            <h2 class="text-2xl font-semibold mb-4">Доступные задания</h2>
+            <div id="performer-tasks" class="space-y-4"></div>
         </div>
-        <div id="profile-content" class="hidden">
-            <h2 class="text-2xl font-semibold mb-4">Профиль</h2>
-            <input id="profile-name" type="text" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Ваше имя">
-            <input id="profile-email" type="email" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Email">
-            <select id="profile-role" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md">
+        <div id="register-content">
+            <h2 class="text-2xl font-semibold mb-4">Регистрация</h2>
+            <input id="reg-name" type="text" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Ваше имя">
+            <input id="reg-email" type="email" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Email">
+            <select id="reg-role" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md">
                 <option value="client">Заказчик</option>
                 <option value="performer">Исполнитель</option>
             </select>
-            <div id="profile-stats" class="mb-4 text-sm text-gray-400"></div>
-            <button onclick="saveProfile()" class="button w-full py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg">Сохранить</button>
+            <div id="performer-fields" class="hidden">
+                <select id="reg-category" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md">
+                    <option value="Дизайн">Дизайн</option>
+                    <option value="Фото студии">Фото студии</option>
+                    <option value="Карго">Карго</option>
+                    <option value="Блогеры">Блогеры</option>
+                    <option value="Сертификация">Сертификация</option>
+                    <option value="Фулфилмент">Фулфилмент</option>
+                    <option value="Менеджеры">Менеджеры</option>
+                    <option value="Байеры">Байеры</option>
+                </select>
+                <textarea id="reg-description" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" rows="3" placeholder="Описание ваших услуг"></textarea>
+            </div>
+            <button onclick="registerUser()" class="button w-full py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg">Зарегистрироваться</button>
+        </div>
+        <div id="category-content" class="hidden">
+            <button onclick="switchTab(getMainTab())" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg mb-4"><i class="ti ti-arrow-left mr-2"></i> Назад</button>
+            <h2 id="category-title" class="text-2xl font-semibold mb-4"></h2>
+            <div id="performers-list" class="space-y-4"></div>
         </div>
         <div id="subscription-content" class="hidden">
             <h2 class="text-2xl font-semibold mb-4">Premium</h2>
@@ -211,15 +246,15 @@
         </div>
         <div id="about-content" class="hidden">
             <h2 class="text-2xl font-semibold mb-4">О нас</h2>
-            <p class="mb-4">Marketplace Helper — это платформа, которая соединяет владельцев интернет-магазинов с профессиональными исполнителями. Мы помогаем найти дизайнеров, фотографов, логистов, блогеров, сертификационные компании, фулфилмент-центры, менеджеров и байеров, чтобы ваш бизнес рос быстрее и эффективнее.</p>
-            <p class="mb-4">Для владельцев магазинов: создавайте задания и находите лучших специалистов за минуты.</p>
-            <p class="mb-4">Для исполнителей: регистрируйтесь, получайте доступ к заказам и увеличивайте доход с Premium.</p>
+            <p class="mb-4">Marketplace Helper — это фриланс-биржа для интернет-магазинов и маркетплейсов. Мы соединяем заказчиков с исполнителями для выполнения задач по дизайну, логистике, рекламе и многому другому.</p>
+            <p class="mb-4">Для заказчиков: создавайте задания и выбирайте исполнителей из нашего списка.</p>
+            <p class="mb-4">Для исполнителей: регистрируйтесь и откликайтесь на задания.</p>
             <p class="text-sm">Наша миссия — упростить сотрудничество и ускорить рост вашего бизнеса!</p>
         </div>
     </div>
     <div class="navbar">
-        <button id="tab-main" class="nav-button active" onclick="switchTab('main')">Главная</button>
-        <button id="tab-profile" class="nav-button" onclick="showProfile()">Профиль</button>
+        <button id="tab-main" class="nav-button" onclick="switchTab(getMainTab())">Главная</button>
+        <button id="tab-profile" class="nav-button active" onclick="switchTab('register')">Профиль</button>
         <button id="tab-tasks" class="nav-button" onclick="switchTab('tasks')">Задания</button>
         <button id="tab-about" class="nav-button" onclick="switchTab('about')">О нас</button>
     </div>
@@ -268,6 +303,19 @@
                 <button onclick="prevOnboarding()" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Назад</button>
                 <button onclick="nextOnboarding()" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Далее</button>
             </div>
+        </div>
+    </div>
+    <div id="rating-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
+            <h3 class="text-xl font-semibold mb-4">Оцените исполнителя</h3>
+            <div class="flex space-x-2 mb-4">
+                <button onclick="ratePerformer(1)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★</button>
+                <button onclick="ratePerformer(2)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★</button>
+                <button onclick="ratePerformer(3)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★★</button>
+                <button onclick="ratePerformer(4)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★★★</button>
+                <button onclick="ratePerformer(5)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★★★★</button>
+            </div>
+            <button onclick="closeRatingModal()" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Закрыть</button>
         </div>
     </div>
     <script src="script.js"></script>
