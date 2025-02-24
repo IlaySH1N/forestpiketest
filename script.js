@@ -72,7 +72,44 @@ function createTask() {
         showNotification('Только заказчики могут создавать задания!');
         return;
     }
+    document.getElementById('task-modal-title').textContent = 'Создать задание';
+    document.getElementById('task-submit-btn').onclick = submitTask;
     document.getElementById('task-modal').classList.remove('hidden');
+}
+
+function editTask(index) {
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const task = tasks[index];
+    if (task.status !== 'Открыто') {
+        showNotification('Можно редактировать только открытые задачи!');
+        return;
+    }
+    document.getElementById('task-modal-title').textContent = 'Редактировать задание';
+    document.getElementById('task-category').value = task.category;
+    document.getElementById('task-input').value = task.text;
+    document.querySelectorAll('input[name="tags"]').forEach(tag => {
+        tag.checked = task.tags.includes(tag.value);
+    });
+    document.getElementById('task-submit-btn').onclick = () => saveEditedTask(index);
+    document.getElementById('task-modal').classList.remove('hidden');
+}
+
+function saveEditedTask(index) {
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const task = document.getElementById('task-input').value;
+    const category = document.getElementById('task-category').value;
+    const tags = Array.from(document.querySelectorAll('input[name="tags"]:checked')).map(tag => tag.value);
+    if (task && category) {
+        tasks[index].text = task;
+        tasks[index].category = category;
+        tasks[index].tags = tags;
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        showNotification(`Задание "${task}" обновлено!`);
+        updateTaskList();
+        closeModal();
+    } else {
+        showNotification('Заполните все поля!');
+    }
 }
 
 function closeModal() {
@@ -108,8 +145,7 @@ function submitTask() {
         };
         tasks.push(newTask);
         localStorage.setItem('tasks', JSON.stringify(tasks));
-        const taskCount = document.getElementById('task-count');
-        taskCount.textContent = tasks.length;
+        document.getElementById('task-count').textContent = tasks.length;
         updateTaskList();
         updateStats();
         closeModal();
@@ -125,14 +161,25 @@ function updateTaskList() {
     const performerTasks = document.getElementById('performer-tasks');
     const role = localStorage.getItem('role');
     const userId = Telegram.WebApp.initDataUnsafe.user ? Telegram.WebApp.initDataUnsafe.user.id : null;
+    
+    const filterCategory = document.getElementById('filter-category').value;
+    const filterTag = document.getElementById('filter-tag').value;
+
+    let filteredTasks = tasks;
+    if (filterCategory) {
+        filteredTasks = filteredTasks.filter(task => task.category === filterCategory);
+    }
+    if (filterTag) {
+        filteredTasks = filteredTasks.filter(task => task.tags.includes(filterTag));
+    }
 
     taskList.innerHTML = '<div class="spinner"></div>';
     performerTasks.innerHTML = '<div class="spinner"></div>';
     myTasksList.innerHTML = '<div class="spinner"></div>';
 
     setTimeout(() => {
-        // Список всех задач (для заказчиков и исполнителей)
-        taskList.innerHTML = tasks.length ? tasks.map((task, index) => {
+        // Список всех задач (с фильтрацией)
+        taskList.innerHTML = filteredTasks.length ? filteredTasks.map((task, index) => {
             task.views = task.views ? task.views + 1 : 1;
             localStorage.setItem('tasks', JSON.stringify(tasks));
             const statusClass = task.status === 'Открыто' ? 'status-open' : task.status === 'В работе' ? 'status-in-progress' : 'status-completed';
@@ -150,7 +197,7 @@ function updateTaskList() {
                     ${role === 'performer' && task.status === 'Открыто' ? `<button onclick="respondToTask(${index})" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Откликнуться</button>` : ''}
                 </div>
             `;
-        }).join('') : '<p class="text-center">Заданий пока нет</p>';
+        }).join('') : '<p class="text-center">Заданий нет</p>';
 
         // Мои задачи (для заказчиков)
         myTasksList.innerHTML = tasks.length ? tasks.filter(task => task.creatorId === userId).map((task, index) => {
@@ -165,8 +212,11 @@ function updateTaskList() {
                         ${task.performerId ? `<p class="text-sm text-gray-400">Исполнитель: ${company ? company.name : 'Неизвестен'}</p>` : ''}
                         <div>${task.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>
                     </div>
-                    ${task.status === 'Открыто' ? `<button onclick="deleteTask(${index})" class="py-2 px-4 bg-red-500 text-white rounded-lg">Удалить</button>` : ''}
-                    ${task.status === 'В работе' && task.performerId ? `<button onclick="chatWithPerformer('${task.performerId}')" class="py-2 px-4 bg-blue-500 text-white rounded-lg">Чат</button>` : ''}
+                    <div class="flex space-x-2">
+                        ${task.status === 'Открыто' ? `<button onclick="editTask(${index})" class="py-2 px-4 bg-blue-500 text-white rounded-lg">Редактировать</button>` : ''}
+                        ${task.status === 'Открыто' ? `<button onclick="deleteTask(${index})" class="py-2 px-4 bg-red-500 text-white rounded-lg">Удалить</button>` : ''}
+                        ${task.status === 'В работе' && task.performerId ? `<button onclick="chatWithPerformer('${task.performerId}')" class="py-2 px-4 bg-blue-500 text-white rounded-lg">Чат</button>` : ''}
+                    </div>
                 </div>
             `;
         }).join('') : '<p class="text-center">Ваши задачи отсутствуют</p>';
@@ -421,8 +471,8 @@ function startOnboarding() {
     const steps = [
         { title: 'Добро пожаловать!', text: 'Это ваше первое знакомство с платформой.' },
         { title: 'Регистрация', text: 'Зарегистрируйтесь как заказчик или исполнитель.' },
-        { title: 'Создание заданий', text: 'Заказчики могут создавать задачи для поиска исполнителей.' },
-        { title: 'Отклики', text: 'Исполнители могут откликаться на задачи или быть выбранными из списка.' }
+        { title: 'Создание заданий', text: 'Заказчики могут создавать и редактировать задачи.' },
+        { title: 'Отклики', text: 'Исполнители могут откликаться на задачи.' }
     ];
     let step = 0;
 
