@@ -211,7 +211,7 @@
             <button onclick="registerUser()" class="button w-full py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg">Зарегистрироваться</button>
         </div>
         <div id="category-content" class="hidden">
-            <button onclick="switchToCategory('Дизайн')" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg mb-4"><i class="ti ti-arrow-left mr-2"></i> Назад</button>
+            <button onclick="switchTab(getMainTab())" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg mb-4"><i class="ti ti-arrow-left mr-2"></i> Назад</button>
             <h2 id="category-title" class="text-2xl font-semibold mb-4"></h2>
             <div id="performers-list" class="space-y-4"></div>
         </div>
@@ -260,9 +260,23 @@
                     <option value="Логистика">Логистика</option>
                     <option value="Реклама">Реклама</option>
                 </select>
+                <select id="sort-tasks" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" onchange="updateTaskList()">
+                    <option value="">Сортировка</option>
+                    <option value="date">По дате</option>
+                    <option value="views">По просмотрам</option>
+                    <option value="responses">По откликам</option>
+                </select>
             </div>
             <div id="task-stats" class="mb-4 text-sm text-gray-400"></div>
             <div id="task-list" class="space-y-4"></div>
+        </div>
+        <div id="profile-content" class="hidden">
+            <h2 class="text-2xl font-semibold mb-4">Профиль</h2>
+            <p id="profile-role" class="mb-2 text-gray-400"></p>
+            <p id="profile-name" class="mb-2 text-gray-400"></p>
+            <p id="profile-email" class="mb-4 text-gray-400"></p>
+            <h3 class="text-lg font-semibold mb-2">Ваши задачи/отклики</h3>
+            <div id="profile-tasks" class="space-y-4"></div>
         </div>
         <div id="about-content" class="hidden">
             <h2 class="text-2xl font-semibold mb-4">О нас</h2>
