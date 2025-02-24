@@ -14,7 +14,7 @@ function switchToCategory(category) {
                 <button onclick="filterPerformers('all')" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Все</button>
             </div>
             <div id="performer-list" class="space-y-4">
-                ${companies.filter(c => c.category === category).map((company, index) => `
+                ${companies.filter(c => c.category === category).map((company) => `
                     <div class="card cursor-pointer p-4 flex justify-between items-center hover:bg-gray-700 transition ${company.premium ? 'subscribed' : ''}">
                         <div>
                             <p class="font-semibold">${company.name} ${company.premium ? '<i class="ti ti-crown text-yellow-500 text-sm ml-1"></i>' : ''}</p>
@@ -54,6 +54,10 @@ function selectPerformer(companyId) {
         tasks[selectedTaskIndex].performerId = companyId;
         localStorage.setItem('tasks', JSON.stringify(tasks));
         showNotification(`Исполнитель с ID ${companyId} назначен на задачу!`);
+        const company = JSON.parse(localStorage.getItem('companies') || '[]').find(c => c.id === companyId);
+        if (company) {
+            window.Telegram.WebApp.openTelegramLink(`https://t.me/${company.email.split('@')[1]}?text=Вы выбраны для выполнения задачи: ${tasks[selectedTaskIndex].text}`);
+        }
         updateTaskList();
         switchTab('tasks');
     } else {
@@ -141,9 +145,12 @@ function submitTask() {
             tags: tags, 
             creatorId: Telegram.WebApp.initDataUnsafe.user.id, 
             status: 'Открыто', 
-            performerId: null 
+            performerId: null,
+            createdAt: new Date().toISOString(),
+            responders: [] // Список откликнувшихся
         };
         tasks.push(newTask);
+        // Примечание: Для синхронизации задач между пользователями замените localStorage на серверное хранилище (например, Firebase).
         localStorage.setItem('tasks', JSON.stringify(tasks));
         document.getElementById('task-count').textContent = tasks.length;
         updateTaskList();
@@ -159,11 +166,13 @@ function updateTaskList() {
     const taskList = document.getElementById('task-list');
     const myTasksList = document.getElementById('my-tasks-list');
     const performerTasks = document.getElementById('performer-tasks');
+    const profileTasks = document.getElementById('profile-tasks');
     const role = localStorage.getItem('role');
     const userId = Telegram.WebApp.initDataUnsafe.user ? Telegram.WebApp.initDataUnsafe.user.id : null;
-    
+
     const filterCategory = document.getElementById('filter-category').value;
     const filterTag = document.getElementById('filter-tag').value;
+    const sortOption = document.getElementById('sort-tasks').value;
 
     let filteredTasks = tasks;
     if (filterCategory) {
@@ -173,12 +182,22 @@ function updateTaskList() {
         filteredTasks = filteredTasks.filter(task => task.tags.includes(filterTag));
     }
 
+    if (sortOption) {
+        filteredTasks.sort((a, b) => {
+            if (sortOption === 'date') return new Date(b.createdAt) - new Date(a.createdAt);
+            if (sortOption === 'views') return b.views - a.views;
+            if (sortOption === 'responses') return b.responses - a.responses;
+            return 0;
+        });
+    }
+
     taskList.innerHTML = '<div class="spinner"></div>';
     performerTasks.innerHTML = '<div class="spinner"></div>';
     myTasksList.innerHTML = '<div class="spinner"></div>';
+    profileTasks.innerHTML = '<div class="spinner"></div>';
 
     setTimeout(() => {
-        // Список всех задач (с фильтрацией)
+        // Список всех задач (с фильтрацией и сортировкой)
         taskList.innerHTML = filteredTasks.length ? filteredTasks.map((task, index) => {
             task.views = task.views ? task.views + 1 : 1;
             localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -210,12 +229,14 @@ function updateTaskList() {
                         <p class="text-sm text-gray-400">Категория: ${task.category} | Откликов: ${task.responses} | Просмотров: ${task.views}</p>
                         <p class="text-sm text-gray-400"><span class="status-dot ${statusClass}"></span> Статус: ${task.status}</p>
                         ${task.performerId ? `<p class="text-sm text-gray-400">Исполнитель: ${company ? company.name : 'Неизвестен'}</p>` : ''}
+                        ${task.responders.length ? `<p class="text-sm text-gray-400">Откликнулись: ${task.responders.join(', ')}</p>` : ''}
                         <div>${task.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>
                     </div>
                     <div class="flex space-x-2">
-                        ${task.status === 'Открыто' ? `<button onclick="editTask(${index})" class="py-2 px-4 bg-blue-500 text-white rounded-lg">Редактировать</button>` : ''}
-                        ${task.status === 'Открыто' ? `<button onclick="deleteTask(${index})" class="py-2 px-4 bg-red-500 text-white rounded-lg">Удалить</button>` : ''}
-                        ${task.status === 'В работе' && task.performerId ? `<button onclick="chatWithPerformer('${task.performerId}')" class="py-2 px-4 bg-blue-500 text-white rounded-lg">Чат</button>` : ''}
+                        ${role === 'client' && task.status === 'Открыто' ? `<button onclick="editTask(${index})" class="py-2 px-4 bg-blue-500 text-white rounded-lg">Редактировать</button>` : ''}
+                        ${role === 'client' && task.status === 'Открыто' ? `<button onclick="deleteTask(${index})" class="py-2 px-4 bg-red-500 text-white rounded-lg">Удалить</button>` : ''}
+                        ${role === 'client' && task.status === 'Открыто' && task.responders.length ? `<button onclick="acceptResponse(${index}, '${task.responders[0]}')" class="py-2 px-4 bg-green-500 text-white rounded-lg">Принять отклик</button>` : ''}
+                        ${role === 'client' && task.status === 'В работе' && task.performerId ? `<button onclick="chatWithPerformer('${task.performerId}')" class="py-2 px-4 bg-blue-500 text-white rounded-lg">Чат</button>` : ''}
                     </div>
                 </div>
             `;
@@ -237,6 +258,25 @@ function updateTaskList() {
             `;
         }).join('') : '<p class="text-center">Доступных задач нет</p>';
 
+        // Профиль пользователя
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        document.getElementById('profile-role').textContent = `Роль: ${role === 'client' ? 'Заказчик' : 'Исполнитель'}`;
+        document.getElementById('profile-name').textContent = `Имя: ${user.name || 'Не указано'}`;
+        document.getElementById('profile-email').textContent = `Email: ${user.email || 'Не указано'}`;
+        profileTasks.innerHTML = role === 'client' ? 
+            tasks.filter(task => task.creatorId === userId).map(task => `
+                <div class="card p-4">
+                    <p>${task.text}</p>
+                    <p class="text-sm text-gray-400">Статус: ${task.status}</p>
+                </div>
+            `).join('') : 
+            tasks.filter(task => task.responders.includes(userId)).map(task => `
+                <div class="card p-4">
+                    <p>${task.text}</p>
+                    <p class="text-sm text-gray-400">Статус: ${task.status}</p>
+                </div>
+            `).join('') || '<p class="text-center">Задач или откликов нет</p>';
+
         updateStats();
     }, 1000);
 }
@@ -244,9 +284,29 @@ function updateTaskList() {
 function respondToTask(index) {
     const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
     const task = tasks[index];
-    task.responses += 1;
+    const userId = Telegram.WebApp.initDataUnsafe.user.id;
+    if (!task.responders.includes(userId)) {
+        task.responses += 1;
+        task.responders.push(userId);
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        showNotification(`Вы откликнулись на задание: "${task.text}"`);
+    } else {
+        showNotification('Вы уже откликнулись на это задание!');
+    }
+    updateTaskList();
+    updateStats();
+}
+
+function acceptResponse(index, performerId) {
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    tasks[index].status = 'В работе';
+    tasks[index].performerId = performerId;
     localStorage.setItem('tasks', JSON.stringify(tasks));
-    showNotification(`Вы откликнулись на задание: "${task.text}"`);
+    showNotification(`Отклик исполнителя ${performerId} принят!`);
+    const company = JSON.parse(localStorage.getItem('companies') || '[]').find(c => c.id === performerId);
+    if (company) {
+        window.Telegram.WebApp.openTelegramLink(`https://t.me/${company.email.split('@')[1]}?text=Ваш отклик на задачу "${tasks[index].text}" принят!`);
+    }
     updateTaskList();
     updateStats();
 }
@@ -361,7 +421,7 @@ function registerUser() {
         document.getElementById('reg-name').value = '';
         document.getElementById('reg-email').value = '';
         document.getElementById('reg-description').value = '';
-        switchTab(getMainTab());
+        switchTab('profile-content');
         updateUI();
     } else {
         showNotification('Заполните все поля!');
@@ -406,7 +466,7 @@ document.getElementById('reg-role').addEventListener('change', (e) => {
     document.getElementById('performer-fields').classList.toggle('hidden', role !== 'performer');
 });
 
-document.getElementById('logo').addEventListener('click', () => switchTab(getMainTab()));
+document.getElementById('logo').addEventListener('click', () => switchTab('profile-content'));
 document.getElementById('subscription-btn').addEventListener('click', () => switchTab('subscription'));
 
 window.addEventListener('load', () => {
@@ -418,7 +478,7 @@ window.addEventListener('load', () => {
     if (user && !localStorage.getItem('user')) {
         switchTab('register');
     } else {
-        switchTab(getMainTab());
+        switchTab('profile-content');
     }
 
     if (!localStorage.getItem('onboarding')) {
@@ -433,7 +493,8 @@ const tabs = {
     subscription: document.getElementById('tab-subscription'),
     tasks: document.getElementById('tab-tasks'),
     about: document.getElementById('tab-about'),
-    category: document.getElementById('category-content')
+    category: document.getElementById('category-content'),
+    'profile-content': document.getElementById('tab-profile')
 };
 const contents = {
     'client-main': document.getElementById('client-main'),
@@ -442,7 +503,8 @@ const contents = {
     subscription: document.getElementById('subscription-content'),
     tasks: document.getElementById('tasks-content'),
     about: document.getElementById('about-content'),
-    category: document.getElementById('category-content')
+    category: document.getElementById('category-content'),
+    'profile-content': document.getElementById('profile-content')
 };
 
 function switchTab(activeTab) {
