@@ -162,7 +162,7 @@
         <div class="flex items-center"><i class="ti ti-users mr-2"></i> Исполнителей: <span id="performer-count" class="ml-1 font-semibold">0</span></div>
     </div>
     <div id="content" class="w-full max-w-md">
-        <!-- Интерфейс заказчика -->
+        <!-- Главная для заказчиков -->
         <div id="client-main" class="hidden">
             <div class="w-full max-w-md mb-4 overflow-x-auto whitespace-nowrap">
                 <button onclick="switchToCategory('Дизайн')" class="inline-block py-2 px-4 bg-blue-500 text-white rounded-lg shadow-md mr-2"><i class="ti ti-brush mr-2"></i>Дизайн</button>
@@ -182,12 +182,13 @@
             </div>
             <button onclick="createTask()" class="button w-full max-w-md py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg mb-4">Создать задание</button>
         </div>
-        <!-- Интерфейс исполнителя -->
+        <!-- Главная для исполнителей -->
         <div id="performer-main" class="hidden">
             <h2 class="text-2xl font-semibold mb-4">Доступные задания</h2>
             <div id="performer-tasks" class="space-y-4"></div>
         </div>
-        <div id="register-content">
+        <!-- Регистрация -->
+        <div id="register-content" class="hidden">
             <h2 class="text-2xl font-semibold mb-4">Регистрация</h2>
             <input id="reg-name" type="text" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Ваше имя">
             <input id="reg-email" type="email" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Email">
@@ -210,11 +211,13 @@
             </div>
             <button onclick="registerUser()" class="button w-full py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg">Зарегистрироваться</button>
         </div>
+        <!-- Категории исполнителей -->
         <div id="category-content" class="hidden">
             <button onclick="switchTab(getMainTab())" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg mb-4"><i class="ti ti-arrow-left mr-2"></i> Назад</button>
             <h2 id="category-title" class="text-2xl font-semibold mb-4"></h2>
             <div id="performers-list" class="space-y-4"></div>
         </div>
+        <!-- Premium -->
         <div id="subscription-content" class="hidden">
             <h2 class="text-2xl font-semibold mb-4">Premium</h2>
             <p class="mb-4">Получите доступ к эксклюзивным возможностям с Premium!</p>
@@ -239,6 +242,7 @@
             </div>
             <p class="mt-4 text-sm">Premium — ваш ключ к успеху на платформе!</p>
         </div>
+        <!-- Задания -->
         <div id="tasks-content" class="hidden">
             <h2 class="text-2xl font-semibold mb-4">Список заданий</h2>
             <div class="mb-4 flex space-x-2">
@@ -270,7 +274,8 @@
             <div id="task-stats" class="mb-4 text-sm text-gray-400"></div>
             <div id="task-list" class="space-y-4"></div>
         </div>
-        <div id="profile-content" class="hidden">
+        <!-- Профиль -->
+        <div id="profile-content">
             <h2 class="text-2xl font-semibold mb-4">Профиль</h2>
             <p id="profile-role" class="mb-2 text-gray-400"></p>
             <p id="profile-name" class="mb-2 text-gray-400"></p>
@@ -278,6 +283,7 @@
             <h3 class="text-lg font-semibold mb-2">Ваши задачи/отклики</h3>
             <div id="profile-tasks" class="space-y-4"></div>
         </div>
+        <!-- О нас -->
         <div id="about-content" class="hidden">
             <h2 class="text-2xl font-semibold mb-4">О нас</h2>
             <p class="mb-4">Marketplace Helper — это фриланс-биржа для интернет-магазинов и маркетплейсов. Мы соединяем заказчиков с исполнителями для выполнения задач по дизайну, логистике, рекламе и многому другому.</p>
@@ -288,7 +294,7 @@
     </div>
     <div class="navbar">
         <button id="tab-main" class="nav-button" onclick="switchTab(getMainTab())">Главная</button>
-        <button id="tab-profile" class="nav-button active" onclick="switchTab('register')">Профиль</button>
+        <button id="tab-profile" class="nav-button active" onclick="switchTab('profile-content')">Профиль</button>
         <button id="tab-tasks" class="nav-button" onclick="switchTab('tasks')">Задания</button>
         <button id="tab-about" class="nav-button" onclick="switchTab('about')">О нас</button>
     </div>
