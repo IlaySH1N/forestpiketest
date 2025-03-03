@@ -30,14 +30,14 @@ function switchToCategory(category) {
       .map(
         (company) => `
       <div class="card cursor-pointer p-4 flex justify-between items-center hover:bg-gray-700 transition ${company.premium ? 'subscribed' : ''}">
-        <div>
-          <p class="font-semibold">${company.name} ${
+          <div>
+              <p class="font-semibold">${company.name} ${
           company.premium ? '<i class="ti ti-crown text-yellow-500 text-sm ml-1"></i>' : ''
         }</p>
-          <p class="text-sm text-gray-400">${company.description}</p>
-          <p class="text-sm text-gray-400">Рейтинг: ${company.rating || 'Нет оценок'}</p>
-        </div>
-        <button onclick="selectPerformer('${company.id}')" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Выбрать</button>
+              <p class="text-sm text-gray-400">${company.description}</p>
+              <p class="text-sm text-gray-400">Рейтинг: ${company.rating || 'Нет оценок'}</p>
+          </div>
+          <button onclick="selectPerformer('${company.id}')" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Выбрать</button>
       </div>
     `
       )
