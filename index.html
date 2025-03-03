@@ -1,375 +1,416 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marketplace Helper</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/@tabler/icons@latest/iconfont/tabler-icons.min.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: linear-gradient(135deg, #0f172a, #1e293b); 
-            min-height: 100vh; 
-            margin: 0; 
-            padding: 0 0 60px 0; 
-            color: #e5e7eb; 
-        }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes ripple { 
-            0% { transform: scale(0); opacity: 0.5; } 
-            100% { transform: scale(4); opacity: 0; } 
-        }
-        @keyframes pulse { 
-            0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(245, 158, 11, 0.7); } 
-            50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(245, 158, 11, 0.9); } 
-        }
-        @keyframes buttonHover { 
-            0% { transform: scale(1); } 
-            50% { transform: scale(1.05); } 
-            100% { transform: scale(1); } 
-        }
-        @keyframes spin { 
-            0% { transform: rotate(0deg); } 
-            100% { transform: rotate(360deg); } 
-        }
-        .animate-in { animation: fadeInUp 0.5s ease-out forwards; }
-        .slide-in { animation: slideIn 0.3s ease-out forwards; }
-        .notification { animation: slideDown 0.3s ease-out; }
-        .modal { animation: slideUp 0.3s ease-out; }
-        .button { 
-            background: linear-gradient(90deg, #3b82f6, #60a5fa); 
-            transition: transform 0.2s ease, box-shadow 0.3s ease; 
-            position: relative; 
-            overflow: hidden;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            text-align: center;
-            padding: 0 16px;
-            min-height: 48px; 
-        }
-        .button:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.5); 
-            animation: buttonHover 0.5s ease-in-out; 
-        }
-        .button:active { transform: scale(0.95); }
-        .button::after { 
-            content: ''; 
-            position: absolute; 
-            width: 100px; 
-            height: 100px; 
-            background: rgba(255, 255, 255, 0.3); 
-            border-radius: 50%; 
-            transform: scale(0); 
-            pointer-events: none; 
-        }
-        .button:active::after { 
-            animation: ripple 0.6s ease-out; 
-        }
-        .highlight-button { 
-            background: linear-gradient(90deg, #f59e0b, #facc15); 
-            box-shadow: 0 0 15px rgba(245, 158, 11, 0.7); 
-            animation: pulse 2s infinite; 
-        }
-        .highlight-button:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(245, 158, 11, 0.9); }
-        .card { 
-            background: #1f2937; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08); 
-            transition: transform 0.2s ease, box-shadow 0.3s ease; 
-        }
-        .card:hover { transform: translateY(-4px); box-shadow: 0 7px 14px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08); }
-        #content { transition: opacity 0.3s ease-in-out; }
-        h1 { font-weight: 700; letter-spacing: -0.5px; }
-        h2 { font-weight: 600; }
-        .logo { font-size: 24px; font-weight: 700; color: #ffffff; text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
-        .category-icon { font-size: 20px; margin-right: 8px; }
-        #subscription-content .card { background: #111827; color: #e5e7eb; }
-        .navbar { 
-            position: fixed; 
-            bottom: 0; 
-            left: 0; 
-            right: 0; 
-            background: #1f2937; 
-            display: flex; 
-            justify-content: space-around; 
-            align-items: center;
-            padding: 8px 0; 
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2); 
-            z-index: 1000; 
-            max-width: 448px; 
-            margin: 0 auto; 
-        }
-        .nav-button { 
-            background: none; 
-            border: none; 
-            color: #9ca3af; 
-            font-size: 14px; 
-            padding: 8px 12px; 
-            transition: color 0.3s ease, transform 0.2s ease; 
-            cursor: pointer; 
-            text-align: center;
-            flex: 1;
-        }
-        .nav-button:hover { 
-            color: #60a5fa; 
-            transform: scale(1.05); 
-        }
-        .nav-button.active { 
-            color: #60a5fa; 
-            font-weight: 600; 
-        }
-        .tag { 
-            display: inline-block; 
-            background: #374151; 
-            color: #e5e7eb; 
-            padding: 4px 8px; 
-            border-radius: 12px; 
-            font-size: 12px; 
-            margin-right: 4px; 
-            margin-top: 4px; 
-        }
-        .status-open { background: #10b981; }
-        .status-in-progress { background: #f59e0b; }
-        .status-completed { background: #6b7280; }
-        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
-        .spinner { 
-            border: 4px solid #374151; 
-            border-top: 4px solid #60a5fa; 
-            border-radius: 50%; 
-            width: 24px; 
-            height: 24px; 
-            animation: spin 1s linear infinite; 
-            margin: 0 auto; 
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marketplace Helper</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/@tabler/icons@latest/iconfont/tabler-icons.min.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: linear-gradient(135deg, #0f172a, #1e293b); 
+      min-height: 100vh; 
+      margin: 0; 
+      padding: 0 0 60px 0; 
+      color: #e5e7eb; 
+    }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes ripple { 
+      0% { transform: scale(0); opacity: 0.5; } 
+      100% { transform: scale(4); opacity: 0; } 
+    }
+    @keyframes pulse { 
+      0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(245, 158, 11, 0.7); } 
+      50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(245, 158, 11, 0.9); } 
+    }
+    @keyframes buttonHover { 
+      0% { transform: scale(1); } 
+      50% { transform: scale(1.05); } 
+      100% { transform: scale(1); } 
+    }
+    @keyframes spin { 
+      0% { transform: rotate(0deg); } 
+      100% { transform: rotate(360deg); } 
+    }
+    .animate-in { animation: fadeInUp 0.5s ease-out forwards; }
+    .slide-in { animation: slideIn 0.3s ease-out forwards; }
+    .notification { animation: slideDown 0.3s ease-out; }
+    .modal { animation: slideUp 0.3s ease-out; }
+    .button { 
+      background: linear-gradient(90deg, #3b82f6, #60a5fa); 
+      transition: transform 0.2s ease, box-shadow 0.3s ease; 
+      position: relative; 
+      overflow: hidden;
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      text-align: center;
+      padding: 0 16px;
+      min-height: 48px; 
+    }
+    .button:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.5); 
+      animation: buttonHover 0.5s ease-in-out; 
+    }
+    .button:active { transform: scale(0.95); }
+    .button::after { 
+      content: ''; 
+      position: absolute; 
+      width: 100px; 
+      height: 100px; 
+      background: rgba(255, 255, 255, 0.3); 
+      border-radius: 50%; 
+      transform: scale(0); 
+      pointer-events: none; 
+    }
+    .button:active::after { 
+      animation: ripple 0.6s ease-out; 
+    }
+    .highlight-button { 
+      background: linear-gradient(90deg, #f59e0b, #facc15); 
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.7); 
+      animation: pulse 2s infinite; 
+    }
+    .highlight-button:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(245, 158, 11, 0.9); }
+    .card { 
+      background: #1f2937; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08); 
+      transition: transform 0.2s ease, box-shadow 0.3s ease; 
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 7px 14px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08); }
+    #content { transition: opacity 0.3s ease-in-out; }
+    h1 { font-weight: 700; letter-spacing: -0.5px; }
+    h2 { font-weight: 600; }
+    .logo { font-size: 24px; font-weight: 700; color: #ffffff; text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
+    .category-icon { font-size: 20px; margin-right: 8px; }
+    #subscription-content .card { background: #111827; color: #e5e7eb; }
+    .navbar { 
+      position: fixed; 
+      bottom: 0; 
+      left: 0; 
+      right: 0; 
+      background: #1f2937; 
+      display: flex; 
+      justify-content: space-around; 
+      align-items: center;
+      padding: 8px 0; 
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2); 
+      z-index: 1000; 
+      max-width: 448px; 
+      margin: 0 auto; 
+    }
+    .nav-button { 
+      background: none; 
+      border: none; 
+      color: #9ca3af; 
+      font-size: 14px; 
+      padding: 8px 12px; 
+      transition: color 0.3s ease, transform 0.2s ease; 
+      cursor: pointer; 
+      text-align: center;
+      flex: 1;
+    }
+    .nav-button:hover { 
+      color: #60a5fa; 
+      transform: scale(1.05); 
+    }
+    .nav-button.active { 
+      color: #60a5fa; 
+      font-weight: 600; 
+    }
+    .tag { 
+      display: inline-block; 
+      background: #374151; 
+      color: #e5e7eb; 
+      padding: 4px 8px; 
+      border-radius: 12px; 
+      font-size: 12px; 
+      margin-right: 4px; 
+      margin-top: 4px; 
+    }
+    .status-open { background: #10b981; }
+    .status-in-progress { background: #f59e0b; }
+    .status-completed { background: #6b7280; }
+    .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
+    .spinner { 
+      border: 4px solid #374151; 
+      border-top: 4px solid #60a5fa; 
+      border-radius: 50%; 
+      width: 24px; 
+      height: 24px; 
+      animation: spin 1s linear infinite; 
+      margin: 0 auto; 
+    }
+  </style>
 </head>
 <body class="flex flex-col items-center justify-start p-4">
-    <div class="relative w-full max-w-md flex justify-between items-center mb-4">
-        <span id="logo" class="logo cursor-pointer">MH</span>
-        <button id="subscription-btn" class="highlight-button py-2 px-4 text-white rounded-lg shadow-lg"><i class="ti ti-crown mr-2"></i> Premium</button>
+  <div class="relative w-full max-w-md flex justify-between items-center mb-4">
+    <span id="logo" class="logo cursor-pointer">MH</span>
+    <button id="subscription-btn" class="highlight-button py-2 px-4 text-white rounded-lg shadow-lg">
+      <i class="ti ti-crown mr-2"></i> Premium
+    </button>
+  </div>
+  <h1 class="text-3xl font-bold mb-6 text-center animate-in">Marketplace Helper</h1>
+  <div class="w-full max-w-md p-4 bg-white bg-opacity-20 rounded-lg mb-4 flex justify-between">
+    <div class="flex items-center">
+      <i class="ti ti-list mr-2"></i> Заданий: <span id="task-count" class="ml-1 font-semibold">0</span>
     </div>
-    <h1 class="text-3xl font-bold mb-6 text-center animate-in">Marketplace Helper</h1>
-    <div class="w-full max-w-md p-4 bg-white bg-opacity-20 rounded-lg mb-4 flex justify-between">
-        <div class="flex items-center"><i class="ti ti-list mr-2"></i> Заданий: <span id="task-count" class="ml-1 font-semibold">0</span></div>
-        <div class="flex items-center"><i class="ti ti-users mr-2"></i> Исполнителей: <span id="performer-count" class="ml-1 font-semibold">0</span></div>
+    <div class="flex items-center">
+      <i class="ti ti-users mr-2"></i> Исполнителей: <span id="performer-count" class="ml-1 font-semibold">0</span>
     </div>
-    <div id="content" class="w-full max-w-md">
-        <!-- Главная для заказчиков -->
-        <div id="client-main" class="hidden">
-            <div class="w-full max-w-md mb-4 overflow-x-auto whitespace-nowrap">
-                <button onclick="switchToCategory('Дизайн')" class="inline-block py-2 px-4 bg-blue-500 text-white rounded-lg shadow-md mr-2"><i class="ti ti-brush mr-2"></i>Дизайн</button>
-                <button onclick="switchToCategory('Блогеры')" class="inline-block py-2 px-4 bg-blue-500 text-white rounded-lg shadow-md mr-2"><i class="ti ti-users mr-2"></i>Блогеры</button>
-                <button onclick="switchToCategory('Карго')" class="inline-block py-2 px-4 bg-blue-500 text-white rounded-lg shadow-md"><i class="ti ti-truck mr-2"></i>Карго</button>
-            </div>
-            <input id="search" type="text" class="w-full max-w-md p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Поиск по категориям...">
-            <div id="categories" class="w-full max-w-md space-y-4 animate-in mb-6" style="animation-delay: 0.2s;">
-                <button onclick="switchToCategory('Дизайн')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg"><i class="ti ti-brush category-icon"></i> Дизайн</button>
-                <button onclick="switchToCategory('Фото студии')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg"><i class="ti ti-camera category-icon"></i> Фото студии</button>
-                <button onclick="switchToCategory('Карго')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg"><i class="ti ti-truck category-icon"></i> Карго</button>
-                <button onclick="switchToCategory('Блогеры')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg"><i class="ti ti-users category-icon"></i> Блогеры</button>
-                <button onclick="switchToCategory('Сертификация')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg"><i class="ti ti-certificate category-icon"></i> Сертификация</button>
-                <button onclick="switchToCategory('Фулфилмент')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg"><i class="ti ti-building-warehouse category-icon"></i> Фулфилмент</button>
-                <button onclick="switchToCategory('Менеджеры')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg"><i class="ti ti-user-check category-icon"></i> Менеджеры</button>
-                <button onclick="switchToCategory('Байеры')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg"><i class="ti ti-shopping-cart category-icon"></i> Байеры</button>
-            </div>
-            <button onclick="createTask()" class="button w-full max-w-md py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg mb-4">Создать задание</button>
-        </div>
-        <!-- Главная для исполнителей -->
-        <div id="performer-main" class="hidden">
-            <h2 class="text-2xl font-semibold mb-4">Доступные задания</h2>
-            <div id="performer-tasks" class="space-y-4"></div>
-        </div>
-        <!-- Регистрация -->
-        <div id="register-content" class="hidden">
-            <h2 class="text-2xl font-semibold mb-4">Регистрация</h2>
-            <input id="reg-name" type="text" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Ваше имя">
-            <input id="reg-email" type="email" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Email">
-            <select id="reg-role" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md">
-                <option value="client">Заказчик</option>
-                <option value="performer">Исполнитель</option>
-            </select>
-            <div id="performer-fields" class="hidden">
-                <select id="reg-category" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md">
-                    <option value="Дизайн">Дизайн</option>
-                    <option value="Фото студии">Фото студии</option>
-                    <option value="Карго">Карго</option>
-                    <option value="Блогеры">Блогеры</option>
-                    <option value="Сертификация">Сертификация</option>
-                    <option value="Фулфилмент">Фулфилмент</option>
-                    <option value="Менеджеры">Менеджеры</option>
-                    <option value="Байеры">Байеры</option>
-                </select>
-                <textarea id="reg-description" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" rows="3" placeholder="Описание ваших услуг"></textarea>
-            </div>
-            <button onclick="registerUser()" class="button w-full py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg">Зарегистрироваться</button>
-        </div>
-        <!-- Категории исполнителей -->
-        <div id="category-content" class="hidden">
-            <button onclick="switchTab(getMainTab())" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg mb-4"><i class="ti ti-arrow-left mr-2"></i> Назад</button>
-            <h2 id="category-title" class="text-2xl font-semibold mb-4"></h2>
-            <div id="performers-list" class="space-y-4"></div>
-        </div>
-        <!-- Premium -->
-        <div id="subscription-content" class="hidden">
-            <h2 class="text-2xl font-semibold mb-4">Premium</h2>
-            <p class="mb-4">Получите доступ к эксклюзивным возможностям с Premium!</p>
-            <div class="space-y-4">
-                <div class="card p-4">
-                    <h3 class="font-semibold text-lg">Базовый тариф - 500 ₽/мес</h3>
-                    <ul class="list-disc ml-5">
-                        <li>Место в топе списка исполнителей</li>
-                        <li>Неограниченные отклики на задания</li>
-                        <li>Приоритетная видимость для заказчиков</li>
-                    </ul>
-                    <button class="button w-full py-2 px-4 mt-2 bg-teal-500 text-white rounded-lg shadow-lg">Оформить</button>
-                </div>
-                <div class="card p-4">
-                    <h3 class="font-semibold text-lg">Разовый отклик - 100 ₽</h3>
-                    <ul class="list-disc ml-5">
-                        <li>Один отклик на задание</li>
-                        <li>Без поднятия в топ</li>
-                    </ul>
-                    <button class="button w-full py-2 px-4 mt-2 bg-teal-500 text-white rounded-lg shadow-lg">Купить отклик</button>
-                </div>
-            </div>
-            <p class="mt-4 text-sm">Premium — ваш ключ к успеху на платформе!</p>
-        </div>
-        <!-- Задания -->
-        <div id="tasks-content" class="hidden">
-            <h2 class="text-2xl font-semibold mb-4">Список заданий</h2>
-            <div class="mb-4 flex space-x-2">
-                <select id="filter-category" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" onchange="updateTaskList()">
-                    <option value="">Все категории</option>
-                    <option value="Дизайн">Дизайн</option>
-                    <option value="Фото студии">Фото студии</option>
-                    <option value="Карго">Карго</option>
-                    <option value="Блогеры">Блогеры</option>
-                    <option value="Сертификация">Сертификация</option>
-                    <option value="Фулфилмент">Фулфилмент</option>
-                    <option value="Менеджеры">Менеджеры</option>
-                    <option value="Байеры">Байеры</option>
-                </select>
-                <select id="filter-tag" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" onchange="updateTaskList()">
-                    <option value="">Все теги</option>
-                    <option value="Срочно">Срочно</option>
-                    <option value="Дизайн">Дизайн</option>
-                    <option value="Логистика">Логистика</option>
-                    <option value="Реклама">Реклама</option>
-                </select>
-                <select id="sort-tasks" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" onchange="updateTaskList()">
-                    <option value="">Сортировка</option>
-                    <option value="date">По дате</option>
-                    <option value="views">По просмотрам</option>
-                    <option value="responses">По откликам</option>
-                </select>
-            </div>
-            <div id="task-stats" class="mb-4 text-sm text-gray-400"></div>
-            <div id="task-list" class="space-y-4"></div>
-        </div>
-        <!-- Профиль -->
-       <div id="profile-content">
-    <h2 class="text-2xl font-semibold mb-4">Профиль</h2>
-    <p id="profile-role" class="mb-2 text-gray-400"></p>
-    <p id="profile-name" class="mb-2 text-gray-400"></p>
-    <p id="profile-email" class="mb-4 text-gray-400"></p>
-
-    <!-- Форма для редактирования данных -->
-    <div id="edit-profile-form" class="hidden">
-        <input id="edit-name" type="text" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Ваше имя">
-        <input id="edit-email" type="email" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Email">
-        <button onclick="saveProfileChanges()" class="button w-full py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg">Сохранить изменения</button>
-        <button onclick="cancelEditProfile()" class="button w-full py-3 px-4 bg-gray-600 text-gray-200 rounded-lg shadow-lg mt-2">Отмена</button>
+  </div>
+  <div id="content" class="w-full max-w-md">
+    <!-- Главная для заказчиков -->
+    <div id="client-main" class="hidden">
+      <!-- Кнопки категорий и элементы для создания задания (как в оригинале) -->
+      <div class="w-full max-w-md mb-4 overflow-x-auto whitespace-nowrap">
+        <button onclick="switchToCategory('Дизайн')" class="inline-block py-2 px-4 bg-blue-500 text-white rounded-lg shadow-md mr-2">
+          <i class="ti ti-brush mr-2"></i>Дизайн
+        </button>
+        <button onclick="switchToCategory('Блогеры')" class="inline-block py-2 px-4 bg-blue-500 text-white rounded-lg shadow-md mr-2">
+          <i class="ti ti-users mr-2"></i>Блогеры
+        </button>
+        <button onclick="switchToCategory('Карго')" class="inline-block py-2 px-4 bg-blue-500 text-white rounded-lg shadow-md">
+          <i class="ti ti-truck mr-2"></i>Карго
+        </button>
+      </div>
+      <input id="search" type="text" class="w-full max-w-md p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Поиск по категориям..." />
+      <div id="categories" class="w-full max-w-md space-y-4 animate-in mb-6" style="animation-delay: 0.2s;">
+        <button onclick="switchToCategory('Дизайн')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg">
+          <i class="ti ti-brush category-icon"></i> Дизайн
+        </button>
+        <button onclick="switchToCategory('Фото студии')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg">
+          <i class="ti ti-camera category-icon"></i> Фото студии
+        </button>
+        <button onclick="switchToCategory('Карго')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg">
+          <i class="ti ti-truck category-icon"></i> Карго
+        </button>
+        <button onclick="switchToCategory('Блогеры')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg">
+          <i class="ti ti-users category-icon"></i> Блогеры
+        </button>
+        <button onclick="switchToCategory('Сертификация')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg">
+          <i class="ti ti-certificate category-icon"></i> Сертификация
+        </button>
+        <button onclick="switchToCategory('Фулфилмент')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg">
+          <i class="ti ti-building-warehouse category-icon"></i> Фулфилмент
+        </button>
+        <button onclick="switchToCategory('Менеджеры')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg">
+          <i class="ti ti-user-check category-icon"></i> Менеджеры
+        </button>
+        <button onclick="switchToCategory('Байеры')" class="button w-full py-3 px-4 text-white rounded-lg shadow-lg">
+          <i class="ti ti-shopping-cart category-icon"></i> Байеры
+        </button>
+      </div>
+      <button onclick="createTask()" class="button w-full max-w-md py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg mb-4">
+        Создать задание
+      </button>
     </div>
-
-    <!-- Кнопка для редактирования профиля -->
-    <button onclick="editProfile()" class="button w-full py-3 px-4 bg-blue-500 text-white rounded-lg shadow-lg mb-4">Редактировать профиль</button>
-
-    <h3 class="text-lg font-semibold mb-2">Ваши задачи/отклики</h3>
-    <div id="profile-tasks" class="space-y-4"></div>
-</div>
-        <!-- О нас -->
-        <div id="about-content" class="hidden">
-            <h2 class="text-2xl font-semibold mb-4">О нас</h2>
-            <p class="mb-4">Marketplace Helper — это фриланс-биржа для интернет-магазинов и маркетплейсов. Мы соединяем заказчиков с исполнителями для выполнения задач по дизайну, логистике, рекламе и многому другому.</p>
-            <p class="mb-4">Для заказчиков: создавайте, редактируйте и управляйте своими задачами.</p>
-            <p class="mb-4">Для исполнителей: откликайтесь на задания и предлагайте свои услуги.</p>
-            <p class="text-sm">Наша миссия — упростить сотрудничество и ускорить рост вашего бизнеса!</p>
-        </div>
+    <!-- Главная для исполнителей -->
+    <div id="performer-main" class="hidden">
+      <h2 class="text-2xl font-semibold mb-4">Доступные задания</h2>
+      <div id="performer-tasks" class="space-y-4"></div>
     </div>
-    <div class="navbar">
+    <!-- Регистрация -->
+    <div id="register-content" class="hidden">
+      <h2 class="text-2xl font-semibold mb-4">Регистрация</h2>
+      <input id="reg-name" type="text" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Ваше имя" />
+      <input id="reg-email" type="email" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" placeholder="Email" />
+      <select id="reg-role" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md">
+        <option value="client">Заказчик</option>
+        <option value="performer">Исполнитель</option>
+      </select>
+      <div id="performer-fields" class="hidden">
+        <select id="reg-category" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md">
+          <option value="Дизайн">Дизайн</option>
+          <option value="Фото студии">Фото студии</option>
+          <option value="Карго">Карго</option>
+          <option value="Блогеры">Блогеры</option>
+          <option value="Сертификация">Сертификация</option>
+          <option value="Фулфилмент">Фулфилмент</option>
+          <option value="Менеджеры">Менеджеры</option>
+          <option value="Байеры">Байеры</option>
+        </select>
+        <textarea id="reg-description" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" rows="3" placeholder="Описание ваших услуг"></textarea>
+      </div>
+      <button onclick="registerUser()" class="button w-full py-3 px-4 bg-teal-500 text-white rounded-lg shadow-lg">
+        Зарегистрироваться
+      </button>
+    </div>
+    <!-- Категории исполнителей -->
+    <div id="category-content" class="hidden">
+      <button onclick="switchTab(getMainTab())" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg mb-4">
+        <i class="ti ti-arrow-left mr-2"></i> Назад
+      </button>
+      <h2 id="category-title" class="text-2xl font-semibold mb-4"></h2>
+      <div id="performers-list" class="space-y-4"></div>
+    </div>
+    <!-- Premium -->
+    <div id="subscription-content" class="hidden">
+      <h2 class="text-2xl font-semibold mb-4">Premium</h2>
+      <p class="mb-4">Получите доступ к эксклюзивным возможностям с Premium!</p>
+      <div class="space-y-4">
+        <div class="card p-4">
+          <h3 class="font-semibold text-lg">Базовый тариф - 500 ₽/мес</h3>
+          <ul class="list-disc ml-5">
+            <li>Место в топе списка исполнителей</li>
+            <li>Неограниченные отклики на задания</li>
+            <li>Приоритетная видимость для заказчиков</li>
+          </ul>
+          <button class="button w-full py-2 px-4 mt-2 bg-teal-500 text-white rounded-lg shadow-lg">
+            Оформить
+          </button>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-semibold text-lg">Разовый отклик - 100 ₽</h3>
+          <ul class="list-disc ml-5">
+            <li>Один отклик на задание</li>
+            <li>Без поднятия в топ</li>
+          </ul>
+          <button class="button w-full py-2 px-4 mt-2 bg-teal-500 text-white rounded-lg shadow-lg">
+            Купить отклик
+          </button>
+        </div>
+      </div>
+      <p class="mt-4 text-sm">Premium — ваш ключ к успеху на платформе!</p>
+    </div>
+    <!-- Задания -->
+    <div id="tasks-content" class="hidden">
+      <h2 class="text-2xl font-semibold mb-4">Список заданий</h2>
+      <div class="mb-4 flex space-x-2">
+        <select id="filter-category" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" onchange="updateTaskList()">
+          <option value="">Все категории</option>
+          <option value="Дизайн">Дизайн</option>
+          <option value="Фото студии">Фото студии</option>
+          <option value="Карго">Карго</option>
+          <option value="Блогеры">Блогеры</option>
+          <option value="Сертификация">Сертификация</option>
+          <option value="Фулфилмент">Фулфилмент</option>
+          <option value="Менеджеры">Менеджеры</option>
+          <option value="Байеры">Байеры</option>
+        </select>
+        <select id="filter-tag" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" onchange="updateTaskList()">
+          <option value="">Все теги</option>
+          <option value="Срочно">Срочно</option>
+          <option value="Дизайн">Дизайн</option>
+          <option value="Логистика">Логистика</option>
+          <option value="Реклама">Реклама</option>
+        </select>
+        <select id="sort-tasks" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" onchange="updateTaskList()">
+          <option value="">Сортировка</option>
+          <option value="date">По дате</option>
+          <option value="views">По просмотрам</option>
+          <option value="responses">По откликам</option>
+        </select>
+      </div>
+      <div id="task-stats" class="mb-4 text-sm text-gray-400"></div>
+      <div id="task-list" class="space-y-4"></div>
+    </div>
+    <!-- Профиль -->
+    <div id="profile-content">
+      <h2 class="text-2xl font-semibold mb-4">Профиль</h2>
+      <div class="flex items-center mb-4">
+        <img id="profile-avatar" src="default-avatar.png" alt="Avatar" class="w-24 h-24 rounded-full mr-4" />
+        <div>
+          <input type="file" id="avatar-upload" class="mb-2 text-gray-200" />
+        </div>
+      </div>
+      <p id="profile-role" class="mb-2 text-gray-400"></p>
+      <p id="profile-name" class="mb-2 text-gray-400"></p>
+      <p id="profile-email" class="mb-4 text-gray-400"></p>
+      <div class="mb-4">
+        <input id="profile-name-input" type="text" placeholder="Новое имя" class="w-full p-3 mb-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" />
+        <input id="profile-email-input" type="text" placeholder="Новый email" class="w-full p-3 mb-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" />
+        <button id="save-profile" class="button w-full py-2 px-4 bg-teal-500 text-white rounded-lg">Сохранить профиль</button>
+      </div>
+      <h3 class="text-lg font-semibold mb-2">Ваши задачи/отклики</h3>
+      <div id="profile-tasks" class="space-y-4"></div>
+    </div>
+    <!-- О нас -->
+    <div id="about-content" class="hidden">
+      <h2 class="text-2xl font-semibold mb-4">О нас</h2>
+      <p class="mb-4">
+        Marketplace Helper — это фриланс-биржа для интернет-магазинов и маркетплейсов. Мы соединяем заказчиков с исполнителями для выполнения задач по дизайну, логистике, рекламе и многому другому.
+      </p>
+      <p class="mb-4">Для заказчиков: создавайте, редактируйте и управляйте своими задачами.</p>
+      <p class="mb-4">Для исполнителей: откликайтесь на задания и предлагайте свои услуги.</p>
+      <p class="text-sm">Наша миссия — упростить сотрудничество и ускорить рост вашего бизнеса!</p>
+    </div>
+  </div>
+  <div class="navbar">
     <button id="tab-main" class="nav-button" onclick="switchTab(getMainTab())">Главная</button>
     <button id="tab-profile" class="nav-button active" onclick="switchTab('profile-content')">Профиль</button>
     <button id="tab-tasks" class="nav-button" onclick="switchTab('tasks-content')">Задания</button>
     <button id="tab-about" class="nav-button" onclick="switchTab('about-content')">О нас</button>
-   </div>
-    <div id="task-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
-            <h3 id="task-modal-title" class="text-xl font-semibold mb-4">Создать задание</h3>
-            <select id="task-category" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md">
-                <option value="Дизайн">Дизайн</option>
-                <option value="Фото студии">Фото студии</option>
-                <option value="Карго">Карго</option>
-                <option value="Блогеры">Блогеры</option>
-                <option value="Сертификация">Сертификация</option>
-                <option value="Фулфилмент">Фулфилмент</option>
-                <option value="Менеджеры">Менеджеры</option>
-                <option value="Байеры">Байеры</option>
-            </select>
-            <textarea id="task-input" class="w-full p-2 border rounded-lg mb-4 bg-gray-700 text-gray-200 border-gray-600" rows="4" placeholder="Опишите задание..."></textarea>
-            <div class="mb-4">
-                <label class="block text-sm mb-2">Теги:</label>
-                <div class="flex flex-wrap gap-2">
-                    <label><input type="checkbox" name="tags" value="Срочно" class="mr-1"> Срочно</label>
-                    <label><input type="checkbox" name="tags" value="Дизайн" class="mr-1"> Дизайн</label>
-                    <label><input type="checkbox" name="tags" value="Логистика" class="mr-1"> Логистика</label>
-                    <label><input type="checkbox" name="tags" value="Реклама" class="mr-1"> Реклама</label>
-                </div>
-            </div>
-            <div class="flex justify-end space-x-2">
-                <button onclick="closeModal()" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Отмена</button>
-                <button id="task-submit-btn" onclick="submitTask()" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Создать</button>
-            </div>
+  </div>
+  <!-- Модальные окна: задания, онбординг, рейтинг и т.д. (оставляем как в оригинале) -->
+  <div id="task-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
+      <h3 id="task-modal-title" class="text-xl font-semibold mb-4">Создать задание</h3>
+      <select id="task-category" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md">
+        <option value="Дизайн">Дизайн</option>
+        <option value="Фото студии">Фото студии</option>
+        <option value="Карго">Карго</option>
+        <option value="Блогеры">Блогеры</option>
+        <option value="Сертификация">Сертификация</option>
+        <option value="Фулфилмент">Фулфилмент</option>
+        <option value="Менеджеры">Менеджеры</option>
+        <option value="Байеры">Байеры</option>
+      </select>
+      <textarea id="task-input" class="w-full p-2 border rounded-lg mb-4 bg-gray-700 text-gray-200 border-gray-600" rows="4" placeholder="Опишите задание..."></textarea>
+      <div class="mb-4">
+        <label class="block text-sm mb-2">Теги:</label>
+        <div class="flex flex-wrap gap-2">
+          <label><input type="checkbox" name="tags" value="Срочно" class="mr-1"> Срочно</label>
+          <label><input type="checkbox" name="tags" value="Дизайн" class="mr-1"> Дизайн</label>
+          <label><input type="checkbox" name="tags" value="Логистика" class="mr-1"> Логистика</label>
+          <label><input type="checkbox" name="tags" value="Реклама" class="mr-1"> Реклама</label>
         </div>
+      </div>
+      <div class="flex justify-end space-x-2">
+        <button onclick="closeModal()" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Отмена</button>
+        <button id="task-submit-btn" onclick="submitTask()" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Создать</button>
+      </div>
     </div>
-    <div id="tasks-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
-            <h3 class="text-xl font-semibold mb-4">Мои задания</h3>
-            <div id="my-tasks-stats" class="mb-4 text-sm text-gray-400"></div>
-            <div id="my-tasks-list" class="space-y-4"></div>
-            <button onclick="closeTasksModal()" class="mt-4 py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Закрыть</button>
-        </div>
+  </div>
+  <div id="tasks-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
+      <h3 class="text-xl font-semibold mb-4">Мои задания</h3>
+      <div id="my-tasks-stats" class="mb-4 text-sm text-gray-400"></div>
+      <div id="my-tasks-list" class="space-y-4"></div>
+      <button onclick="closeTasksModal()" class="mt-4 py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Закрыть</button>
     </div>
-    <div id="onboarding-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center">
-        <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
-            <h3 id="onboarding-title" class="text-xl font-semibold mb-4">Добро пожаловать!</h3>
-            <p id="onboarding-text" class="mb-4">Это ваше первое знакомство с платформой.</p>
-            <div class="flex justify-between">
-                <button onclick="prevOnboarding()" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Назад</button>
-                <button onclick="nextOnboarding()" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Далее</button>
-            </div>
-        </div>
+  </div>
+  <div id="onboarding-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center">
+    <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
+      <h3 id="onboarding-title" class="text-xl font-semibold mb-4">Добро пожаловать!</h3>
+      <p id="onboarding-text" class="mb-4">Это ваше первое знакомство с платформой.</p>
+      <div class="flex justify-between">
+        <button onclick="prevOnboarding()" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Назад</button>
+        <button onclick="nextOnboarding()" class="py-2 px-4 bg-teal-500 text-white rounded-lg">Далее</button>
+      </div>
     </div>
-    <div id="rating-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
-            <h3 class="text-xl font-semibold mb-4">Оцените исполнителя</h3>
-            <div class="flex space-x-2 mb-4">
-                <button onclick="ratePerformer(1)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★</button>
-                <button onclick="ratePerformer(2)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★</button>
-                <button onclick="ratePerformer(3)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★★</button>
-                <button onclick="ratePerformer(4)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★★★</button>
-                <button onclick="ratePerformer(5)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★★★★</button>
-            </div>
-            <button onclick="closeRatingModal()" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Закрыть</button>
-        </div>
+  </div>
+  <div id="rating-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
+      <h3 class="text-xl font-semibold mb-4">Оцените исполнителя</h3>
+      <div class="flex space-x-2 mb-4">
+        <button onclick="ratePerformer(1)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★</button>
+        <button onclick="ratePerformer(2)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★</button>
+        <button onclick="ratePerformer(3)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★★</button>
+        <button onclick="ratePerformer(4)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★★★</button>
+        <button onclick="ratePerformer(5)" class="py-2 px-4 bg-gray-600 text-yellow-500 rounded-lg">★★★★★</button>
+      </div>
+      <button onclick="closeRatingModal()" class="py-2 px-4 bg-gray-600 text-gray-200 rounded-lg">Закрыть</button>
     </div>
-    <script src="script.js"></script>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
