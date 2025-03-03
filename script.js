@@ -359,12 +359,20 @@ function updateTaskList() {
         : '<p class="text-center">Доступных задач нет</p>';
 
     // Обновление профиля
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    document.getElementById('profile-role').textContent = `Роль: ${
-      role === 'client' ? 'Заказчик' : role === 'performer' ? 'Исполнитель' : 'Не зарегистрирован'
-    }`;
-    document.getElementById('profile-name').textContent = `Имя: ${user.name || 'Не указано'}`;
-    document.getElementById('profile-email').textContent = `Email: ${user.email || 'Не указано'}`;
+    const profile = JSON.parse(localStorage.getItem('profile')) || {};
+    document.getElementById('profile-name').textContent = 'Имя: ' + (profile.name || 'Не указано');
+    document.getElementById('profile-email').textContent = 'Email: ' + (profile.email || 'Не указано');
+    document.getElementById('profile-avatar').src = localStorage.getItem('avatar') || 'default-avatar.png';
+    // Заполняем поля редактирования профиля
+    document.getElementById('profile-name-input').value = profile.name || '';
+    document.getElementById('profile-email-input').value = profile.email || '';
+    document.getElementById('profile-about').value = profile.about || '';
+    document.getElementById('profile-user-type').value = profile.userType || 'freelancer';
+    toggleProfileFields();
+    if (profile.userType === 'company') {
+      document.getElementById('profile-company-name').value = profile.companyName || '';
+      document.getElementById('profile-manager-name').value = profile.managerName || '';
+    }
     profileTasks.innerHTML =
       role === 'client'
         ? tasks
@@ -680,25 +688,44 @@ function uploadAvatar(event) {
   }
 }
 
-// Функция обновления данных профиля
+// Функция обновления данных профиля (расширенная версия)
 function updateProfile() {
   const name = document.getElementById('profile-name-input').value;
   const email = document.getElementById('profile-email-input').value;
-  let user = JSON.parse(localStorage.getItem('user')) || {};
-  user.name = name;
-  user.email = email;
-  localStorage.setItem('user', JSON.stringify(user));
-  document.getElementById('profile-name').textContent = 'Имя: ' + (name || 'Не указано');
-  document.getElementById('profile-email').textContent = 'Email: ' + (email || 'Не указано');
+  const userType = document.getElementById('profile-user-type').value;
+  const about = document.getElementById('profile-about').value;
+  let profile = JSON.parse(localStorage.getItem('profile')) || {};
+  profile.name = name;
+  profile.email = email;
+  profile.userType = userType;
+  profile.about = about;
+  if (userType === 'company') {
+    profile.companyName = document.getElementById('profile-company-name').value;
+    profile.managerName = document.getElementById('profile-manager-name').value;
+  } else {
+    profile.companyName = '';
+    profile.managerName = '';
+  }
+  localStorage.setItem('profile', JSON.stringify(profile));
   showNotification('Профиль обновлен!');
 }
 
-// Функция загрузки данных профиля при загрузке страницы
+// Функция загрузки данных профиля при загрузке страницы (расширенная версия)
 function loadProfile() {
-  const user = JSON.parse(localStorage.getItem('user')) || {};
-  document.getElementById('profile-name').textContent = 'Имя: ' + (user.name || 'Не указано');
-  document.getElementById('profile-email').textContent = 'Email: ' + (user.email || 'Не указано');
+  const profile = JSON.parse(localStorage.getItem('profile')) || {};
+  document.getElementById('profile-name').textContent = 'Имя: ' + (profile.name || 'Не указано');
+  document.getElementById('profile-email').textContent = 'Email: ' + (profile.email || 'Не указано');
   document.getElementById('profile-avatar').src = localStorage.getItem('avatar') || 'default-avatar.png';
+  // Заполнение полей для редактирования профиля
+  document.getElementById('profile-name-input').value = profile.name || '';
+  document.getElementById('profile-email-input').value = profile.email || '';
+  document.getElementById('profile-about').value = profile.about || '';
+  document.getElementById('profile-user-type').value = profile.userType || 'freelancer';
+  toggleProfileFields();
+  if (profile.userType === 'company') {
+    document.getElementById('profile-company-name').value = profile.companyName || '';
+    document.getElementById('profile-manager-name').value = profile.managerName || '';
+  }
 }
 
 document.getElementById('avatar-upload').addEventListener('change', uploadAvatar);
@@ -742,4 +769,10 @@ function startOnboarding() {
   };
 
   updateStep();
+}
+
+// Функция для переключения дополнительных полей в профиле (если выбран тип "Компания")
+function toggleProfileFields() {
+  const userType = document.getElementById('profile-user-type').value;
+  document.getElementById('profile-company-fields').classList.toggle('hidden', userType !== 'company');
 }
