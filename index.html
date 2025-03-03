@@ -14,8 +14,12 @@
       background: linear-gradient(135deg, #0f172a, #1e293b); 
       min-height: 100vh; 
       margin: 0; 
-      padding: 0 0 60px 0; 
+      padding: 0 0 100px 0; /* увеличенный нижний отступ для видимости элементов */
       color: #e5e7eb; 
+    }
+    /* Дополнительное пространство снизу, чтобы контент не скрывался под навбаром */
+    #content {
+      padding-bottom: 100px;
     }
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
@@ -170,7 +174,6 @@
   <div id="content" class="w-full max-w-md">
     <!-- Главная для заказчиков -->
     <div id="client-main" class="hidden">
-      <!-- Кнопки категорий и элементы для создания задания (как в оригинале) -->
       <div class="w-full max-w-md mb-4 overflow-x-auto whitespace-nowrap">
         <button onclick="switchToCategory('Дизайн')" class="inline-block py-2 px-4 bg-blue-500 text-white rounded-lg shadow-md mr-2">
           <i class="ti ti-brush mr-2"></i>Дизайн
@@ -328,7 +331,9 @@
       <div class="mb-4">
         <input id="profile-name-input" type="text" placeholder="Новое имя" class="w-full p-3 mb-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" />
         <input id="profile-email-input" type="text" placeholder="Новый email" class="w-full p-3 mb-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" />
-        <button id="save-profile" class="button w-full py-2 px-4 bg-teal-500 text-white rounded-lg">Сохранить профиль</button>
+        <button id="save-profile" class="button w-full py-2 px-4 bg-teal-500 text-white rounded-lg">
+          Сохранить профиль
+        </button>
       </div>
       <h3 class="text-lg font-semibold mb-2">Ваши задачи/отклики</h3>
       <div id="profile-tasks" class="space-y-4"></div>
@@ -350,7 +355,7 @@
     <button id="tab-tasks" class="nav-button" onclick="switchTab('tasks-content')">Задания</button>
     <button id="tab-about" class="nav-button" onclick="switchTab('about-content')">О нас</button>
   </div>
-  <!-- Модальные окна: задания, онбординг, рейтинг и т.д. (оставляем как в оригинале) -->
+  <!-- Модальные окна (задания, онбординг, рейтинг и пр.) оставляем как в оригинале -->
   <div id="task-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
     <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
       <h3 id="task-modal-title" class="text-xl font-semibold mb-4">Создать задание</h3>
