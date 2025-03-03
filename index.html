@@ -14,17 +14,16 @@
       background: linear-gradient(135deg, #0f172a, #1e293b); 
       min-height: 100vh; 
       margin: 0; 
-      padding: 0 0 100px 0; /* увеличенный нижний отступ для видимости элементов */
+      padding: 0 0 100px 0; /* нижний отступ для видимости элементов */
       color: #e5e7eb; 
     }
-    /* Контейнер для контента – добавлено overflow и max-height для скроллинга,
-       а также нижний padding чтобы ничего не скрывалось под навбаром */
+    /* Контейнер для контента с возможностью скроллинга и дополнительным нижним отступом */
     #content {
       padding-bottom: 100px;
       overflow-y: auto;
       max-height: calc(100vh - 100px);
     }
-    /* Дополнительный отступ для профиля (на случай, если клавиатура его перекрывает) */
+    /* Если вкладка Профиль, добавляем дополнительное пространство */
     #profile-content {
       padding-bottom: 120px;
     }
@@ -323,7 +322,7 @@
       <div id="task-stats" class="mb-4 text-sm text-gray-400"></div>
       <div id="task-list" class="space-y-4"></div>
     </div>
-    <!-- Профиль -->
+    <!-- Профиль с дополнительными полями --> 
     <div id="profile-content">
       <h2 class="text-2xl font-semibold mb-4">Профиль</h2>
       <div class="flex items-center mb-4">
@@ -332,16 +331,30 @@
           <input type="file" id="avatar-upload" class="mb-2 text-gray-200" />
         </div>
       </div>
-      <p id="profile-role" class="mb-2 text-gray-400"></p>
-      <p id="profile-name" class="mb-2 text-gray-400"></p>
-      <p id="profile-email" class="mb-4 text-gray-400"></p>
-      <div class="mb-4">
-        <input id="profile-name-input" type="text" placeholder="Новое имя" class="w-full p-3 mb-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" />
-        <input id="profile-email-input" type="text" placeholder="Новый email" class="w-full p-3 mb-2 bg-gray-700 text-gray-200 rounded-lg shadow-md" />
-        <button id="save-profile" class="button w-full py-2 px-4 bg-teal-500 text-white rounded-lg">
-          Сохранить профиль
-        </button>
+      <!-- Выбор типа профиля --> 
+      <label for="profile-user-type" class="block mb-2">Тип профиля:</label>
+      <select id="profile-user-type" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg mb-4" onchange="toggleProfileFields()">
+        <option value="freelancer">Фрилансер</option>
+        <option value="company">Компания</option>
+        <option value="client">Заказчик</option>
+      </select>
+      <!-- Дополнительные поля для компаний --> 
+      <div id="profile-company-fields" class="hidden mb-4">
+        <label for="profile-company-name" class="block mb-2">Название компании:</label>
+        <input type="text" id="profile-company-name" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg mb-4" />
+        <label for="profile-manager-name" class="block mb-2">Имя менеджера:</label>
+        <input type="text" id="profile-manager-name" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg mb-4" />
       </div>
+      <!-- Основная информация --> 
+      <label for="profile-name-input" class="block mb-2">Имя:</label>
+      <input id="profile-name-input" type="text" placeholder="Новое имя" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" />
+      <label for="profile-email-input" class="block mb-2">Email:</label>
+      <input id="profile-email-input" type="text" placeholder="Новый email" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" />
+      <!-- Раздел "О себе" --> 
+      <label for="profile-about" class="block mb-2">О себе:</label>
+      <textarea id="profile-about" class="w-full p-3 mb-4 bg-gray-700 text-gray-200 rounded-lg shadow-md" rows="4" placeholder="Расскажите о себе..."></textarea>
+      <button id="save-profile" class="button w-full py-2 px-4 bg-teal-500 text-white rounded-lg">Сохранить профиль</button>
+      
       <h3 class="text-lg font-semibold mb-2">Ваши задачи/отклики</h3>
       <div id="profile-tasks" class="space-y-4"></div>
     </div>
@@ -362,7 +375,7 @@
     <button id="tab-tasks" class="nav-button" onclick="switchTab('tasks-content')">Задания</button>
     <button id="tab-about" class="nav-button" onclick="switchTab('about-content')">О нас</button>
   </div>
-  <!-- Модальные окна -->
+  <!-- Модальные окна: задания, онбординг, рейтинг и т.д. (оставляем как в оригинале) -->
   <div id="task-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
     <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
       <h3 id="task-modal-title" class="text-xl font-semibold mb-4">Создать задание</h3>
