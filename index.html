@@ -9,21 +9,31 @@
   <link rel="stylesheet" href="https://unpkg.com/@tabler/icons@latest/iconfont/tabler-icons.min.css" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+    /* Основные стили */
     body { 
       font-family: 'Inter', sans-serif; 
       background: linear-gradient(135deg, #0f172a, #1e293b); 
       min-height: 100vh; 
       margin: 0; 
       padding: 0 0 100px 0; /* нижний отступ для видимости элементов */
-      color: #e5e7eb; 
+      color: #e5e7eb;
+      overflow-x: hidden; /* запрет горизонтального скролла */
     }
-    /* Контейнер для контента с возможностью скроллинга и дополнительным нижним отступом */
+    /* Скрываем скроллбар для эстетики */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    * {
+      scrollbar-width: none; /* для Firefox */
+    }
+    /* Контейнер для контента с вертикальным скроллингом */
     #content {
       padding-bottom: 100px;
       overflow-y: auto;
+      overflow-x: hidden;
       max-height: calc(100vh - 100px);
     }
-    /* Если вкладка Профиль, добавляем дополнительное пространство */
+    /* Дополнительное пространство для вкладки Профиль */
     #profile-content {
       padding-bottom: 120px;
     }
@@ -331,7 +341,7 @@
           <input type="file" id="avatar-upload" class="mb-2 text-gray-200" />
         </div>
       </div>
-      <!-- Выбор типа профиля --> 
+      <!-- Поля профиля --> 
       <label for="profile-user-type" class="block mb-2">Тип профиля:</label>
       <select id="profile-user-type" class="w-full p-2 bg-gray-700 text-gray-200 rounded-lg mb-4" onchange="toggleProfileFields()">
         <option value="freelancer">Фрилансер</option>
@@ -375,7 +385,7 @@
     <button id="tab-tasks" class="nav-button" onclick="switchTab('tasks-content')">Задания</button>
     <button id="tab-about" class="nav-button" onclick="switchTab('about-content')">О нас</button>
   </div>
-  <!-- Модальные окна: задания, онбординг, рейтинг и т.д. (оставляем как в оригинале) -->
+  <!-- Модальные окна -->
   <div id="task-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
     <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
       <h3 id="task-modal-title" class="text-xl font-semibold mb-4">Создать задание</h3>
