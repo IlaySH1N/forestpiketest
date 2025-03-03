@@ -363,7 +363,7 @@ function updateTaskList() {
     document.getElementById('profile-name').textContent = 'Имя: ' + (profile.name || 'Не указано');
     document.getElementById('profile-email').textContent = 'Email: ' + (profile.email || 'Не указано');
     document.getElementById('profile-avatar').src = localStorage.getItem('avatar') || 'default-avatar.png';
-    // Заполняем поля редактирования профиля
+    // Заполнение полей для редактирования профиля
     document.getElementById('profile-name-input').value = profile.name || '';
     document.getElementById('profile-email-input').value = profile.email || '';
     document.getElementById('profile-about').value = profile.about || '';
