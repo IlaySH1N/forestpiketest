@@ -577,6 +577,7 @@ const tabs = {
     'category-content': document.getElementById('category-content'),
     'profile-content': document.getElementById('tab-profile')
 };
+
 const contents = {
     'client-main': document.getElementById('client-main'),
     'performer-main': document.getElementById('performer-main'),
