@@ -17,9 +17,16 @@
       padding: 0 0 100px 0; /* увеличенный нижний отступ для видимости элементов */
       color: #e5e7eb; 
     }
-    /* Дополнительное пространство снизу, чтобы контент не скрывался под навбаром */
+    /* Контейнер для контента – добавлено overflow и max-height для скроллинга,
+       а также нижний padding чтобы ничего не скрывалось под навбаром */
     #content {
       padding-bottom: 100px;
+      overflow-y: auto;
+      max-height: calc(100vh - 100px);
+    }
+    /* Дополнительный отступ для профиля (на случай, если клавиатура его перекрывает) */
+    #profile-content {
+      padding-bottom: 120px;
     }
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
@@ -355,7 +362,7 @@
     <button id="tab-tasks" class="nav-button" onclick="switchTab('tasks-content')">Задания</button>
     <button id="tab-about" class="nav-button" onclick="switchTab('about-content')">О нас</button>
   </div>
-  <!-- Модальные окна (задания, онбординг, рейтинг и пр.) оставляем как в оригинале -->
+  <!-- Модальные окна -->
   <div id="task-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
     <div class="modal bg-gray-800 p-6 rounded-2xl shadow-lg w-11/12 max-w-md text-gray-200">
       <h3 id="task-modal-title" class="text-xl font-semibold mb-4">Создать задание</h3>
