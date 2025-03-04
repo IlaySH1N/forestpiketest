@@ -44,22 +44,38 @@
     .admin-tab-content {
       padding: 16px;
     }
+    /* Стили для формы логина */
+    #login-container {
+      max-width: 400px;
+      margin: 100px auto;
+      background: #1f2937;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body class="p-4">
   <div id="admin-container">
     <h1 class="text-3xl font-bold mb-6 text-center">Админ-панель</h1>
-    <!-- Если пользователь не админ -->
-    <div id="access-denied" class="hidden text-center text-red-500 mb-4">
-      Доступ запрещён
+    
+    <!-- Форма логина, если админ ещё не вошёл -->
+    <div id="login-container" class="hidden">
+      <h2 class="text-2xl font-semibold mb-4 text-center">Вход</h2>
+      <input id="login-username" type="text" placeholder="Логин" class="w-full p-2 bg-gray-700 rounded mb-4" />
+      <input id="login-password" type="password" placeholder="Пароль" class="w-full p-2 bg-gray-700 rounded mb-4" />
+      <button onclick="adminLogin()" class="w-full bg-blue-500 p-2 rounded text-white">Войти</button>
+      <div id="login-error" class="mt-2 text-center text-red-500 hidden">Неверный логин или пароль</div>
     </div>
-    <!-- Основной контент админ-панели -->
+    
+    <!-- Если вход выполнен, показываем админ-контент -->
     <div id="admin-content" class="hidden">
       <!-- Навигация по вкладкам -->
       <div class="mb-4 flex justify-center space-x-4">
         <button id="tab-tasks" class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('tasks')">Задания</button>
         <button id="tab-users" class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('users')">Пользователи</button>
         <button id="tab-stats" class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('stats')">Статистика</button>
+        <button onclick="adminLogout()" class="admin-tab px-4 py-2 bg-red-500 rounded-lg text-white">Выйти</button>
       </div>
       <!-- Контейнер для вкладок -->
       <div id="tab-content">
@@ -82,26 +98,43 @@
     </div>
   </div>
   <script>
-    // Здесь указываем Telegram ID администратора – только 166571056 имеет доступ
-    const adminId = "166571056";
-
-    // Функция проверки, является ли пользователь админом
-    function isAdmin() {
-      const user = Telegram.WebApp.initDataUnsafe.user;
-      if (!user) return false;
-      return String(user.id) === adminId;
+    // Логин и пароль для входа в админ-панель
+    const ADMIN_USERNAME = "admin";
+    const ADMIN_PASSWORD = "qwerty";
+    
+    // Функция входа: проверяет логин и пароль, если верно – сохраняет флаг в localStorage
+    function adminLogin() {
+      const username = document.getElementById("login-username").value;
+      const password = document.getElementById("login-password").value;
+      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        localStorage.setItem("adminLoggedIn", "true");
+        showAdminContent();
+        showTab("tasks");
+        loadTasks();
+        loadUsers();
+        loadStats();
+      } else {
+        document.getElementById("login-error").classList.remove("hidden");
+      }
     }
     
-    // Если пользователь не админ – показываем сообщение
-    function showAccessDenied() {
-      document.getElementById("access-denied").classList.remove("hidden");
-      document.getElementById("admin-content").classList.add("hidden");
+    // Функция выхода: удаляет флаг админ-входа
+    function adminLogout() {
+      localStorage.removeItem("adminLoggedIn");
+      location.reload();
     }
     
-    // Если админ – показываем админ-контент
-    function showAdminContent() {
-      document.getElementById("access-denied").classList.add("hidden");
-      document.getElementById("admin-content").classList.remove("hidden");
+    // Если админ уже залогинен, показываем админ-контент, иначе форму логина
+    function checkAdminLogin() {
+      if (localStorage.getItem("adminLoggedIn") === "true") {
+        showAdminContent();
+        showTab("tasks");
+        loadTasks();
+        loadUsers();
+        loadStats();
+      } else {
+        document.getElementById("login-container").classList.remove("hidden");
+      }
     }
     
     // Переключение вкладок админ-панели
@@ -229,15 +262,7 @@
     
     // Инициализация админ-панели
     window.addEventListener("load", () => {
-      if (!isAdmin()) {
-        showAccessDenied();
-      } else {
-        showAdminContent();
-        showTab("tasks");
-        loadTasks();
-        loadUsers();
-        loadStats();
-      }
+      checkAdminLogin();
     });
   </script>
 </body>
