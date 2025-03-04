@@ -4,28 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Админ-панель</title>
-  <!-- Подключаем Tailwind CSS для удобного стилизования -->
+  <!-- Tailwind CSS для стилизации -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Подключаем Chart.js для построения графиков -->
+  <!-- Chart.js для построения графиков -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Подключаем Telegram WebApp JS -->
+  <!-- Telegram WebApp JS -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/@tabler/icons@latest/iconfont/tabler-icons.min.css" />
   <style>
     /* Основные стили */
     body { 
       font-family: 'Inter', sans-serif; 
-      background: linear-gradient(135deg, #0f172a, #1e293b); 
+      background: linear-gradient(135deg, #0f172a, #1e293b);
       min-height: 100vh; 
       margin: 0; 
-      padding-bottom: 100px; /* нижний отступ для видимости элементов */
+      padding-bottom: 100px; /* нижний отступ */
       color: #e5e7eb;
       overflow-x: hidden; /* запрет горизонтального скролла */
     }
-    /* Скрываем скроллбар для эстетики */
+    /* Скрываем скроллбар */
     ::-webkit-scrollbar { display: none; }
     * { scrollbar-width: none; }
-    /* Контейнер для админ-контента */
+    /* Контейнер для всей админ-панели */
     #admin-container {
       max-width: 1024px;
       margin: 0 auto;
@@ -53,13 +53,28 @@
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
+    /* Стили для навигации по вкладкам */
+    .tabs-nav button {
+      padding: 8px 12px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      margin-right: 4px;
+      cursor: pointer;
+    }
+    .tabs-nav button.active {
+      background: #2563eb;
+    }
+    /* Скроллинг для некоторых списков */
+    .scrollable { max-height: 300px; overflow-y: auto; }
   </style>
 </head>
 <body class="p-4">
   <div id="admin-container">
     <h1 class="text-3xl font-bold mb-6 text-center">Админ-панель</h1>
     
-    <!-- Форма логина (показывается, если adminLoggedIn не установлен) -->
+    <!-- Форма логина -->
     <div id="login-container" class="hidden">
       <h2 class="text-2xl font-semibold mb-4 text-center">Вход</h2>
       <input id="login-username" type="text" placeholder="Логин" class="w-full p-2 bg-gray-700 rounded mb-4" />
@@ -68,51 +83,65 @@
       <div id="login-error" class="mt-2 text-center text-red-500 hidden">Неверный логин или пароль</div>
     </div>
     
-    <!-- Админ-контент (отображается после успешного входа) -->
+    <!-- Основной админ-контент (отображается после входа) -->
     <div id="admin-content" class="hidden">
       <!-- Навигация по вкладкам -->
-      <div class="mb-4 flex justify-center space-x-4">
-        <button class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('tasks')">Задания</button>
-        <button class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('users')">Пользователи</button>
-        <button class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('stats')">Статистика</button>
-        <button class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('logs')">Журнал</button>
-        <button class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('broadcast')">Рассылка</button>
-        <button onclick="adminLogout()" class="admin-tab px-4 py-2 bg-red-500 rounded-lg text-white">Выйти</button>
+      <div class="tabs-nav mb-4 flex flex-wrap justify-center gap-2">
+        <button onclick="showTab('tasks')" id="nav-tasks" class="active">Задания</button>
+        <button onclick="showTab('moderation')" id="nav-moderation">Модерация</button>
+        <button onclick="showTab('users')" id="nav-users">Пользователи</button>
+        <button onclick="showTab('stats')" id="nav-stats">Статистика</button>
+        <button onclick="showTab('reviews')" id="nav-reviews">Отзывы</button>
+        <button onclick="showTab('complaints')" id="nav-complaints">Жалобы</button>
+        <button onclick="showTab('logs')" id="nav-logs">Журнал</button>
+        <button onclick="showTab('broadcast')" id="nav-broadcast">Рассылка</button>
+        <button onclick="adminLogout()" class="bg-red-500 px-4 py-2 rounded text-white">Выйти</button>
       </div>
       
       <!-- Контейнер для вкладок -->
       <div id="tab-content">
-        <!-- Вкладка "Задания" -->
-        <div id="tasks-tab" class="admin-tab-content hidden">
-          <h2 class="text-2xl font-semibold mb-4">Список заданий</h2>
-          <!-- Фильтр заданий -->
+        <!-- Задания -->
+        <div id="tasks-tab" class="admin-tab-content">
+          <h2 class="text-2xl font-semibold mb-4">Все задания</h2>
           <input id="task-search" type="text" placeholder="Поиск заданий" class="w-full p-2 bg-gray-700 rounded mb-4" oninput="loadTasks()">
           <button onclick="deleteAllTasks()" class="mb-4 bg-red-500 px-4 py-2 rounded">Удалить все задания</button>
           <div id="tasks-list"></div>
         </div>
-        
-        <!-- Вкладка "Пользователи" -->
+        <!-- Модерация -->
+        <div id="moderation-tab" class="admin-tab-content hidden">
+          <h2 class="text-2xl font-semibold mb-4">Задания на модерацию</h2>
+          <div id="moderation-list"></div>
+        </div>
+        <!-- Пользователи -->
         <div id="users-tab" class="admin-tab-content hidden">
-          <h2 class="text-2xl font-semibold mb-4">Список пользователей</h2>
+          <h2 class="text-2xl font-semibold mb-4">Пользователи</h2>
           <button onclick="unbanAllUsers()" class="mb-4 bg-green-500 px-4 py-2 rounded">Разбанить всех пользователей</button>
           <div id="users-list"></div>
         </div>
-        
-        <!-- Вкладка "Статистика" -->
+        <!-- Статистика -->
         <div id="stats-tab" class="admin-tab-content hidden">
           <h2 class="text-2xl font-semibold mb-4">Статистика</h2>
           <div id="stats-summary" class="mb-4"></div>
           <canvas id="stats-chart" class="bg-white rounded"></canvas>
         </div>
-        
-        <!-- Вкладка "Журнал" -->
+        <!-- Отзывы -->
+        <div id="reviews-tab" class="admin-tab-content hidden">
+          <h2 class="text-2xl font-semibold mb-4">Отзывы и рейтинг исполнителей</h2>
+          <div id="reviews-list"></div>
+        </div>
+        <!-- Жалобы -->
+        <div id="complaints-tab" class="admin-tab-content hidden">
+          <h2 class="text-2xl font-semibold mb-4">Жалобы</h2>
+          <div id="complaints-list" class="scrollable"></div>
+          <button onclick="clearComplaints()" class="mt-4 bg-red-500 px-4 py-2 rounded">Очистить жалобы</button>
+        </div>
+        <!-- Журнал действий -->
         <div id="logs-tab" class="admin-tab-content hidden">
           <h2 class="text-2xl font-semibold mb-4">Журнал действий</h2>
-          <div id="logs-list" class="overflow-y-auto max-h-64"></div>
+          <div id="logs-list" class="scrollable"></div>
           <button onclick="clearLogs()" class="mt-4 bg-red-500 px-4 py-2 rounded">Очистить журнал</button>
         </div>
-        
-        <!-- Вкладка "Рассылка" -->
+        <!-- Рассылка уведомлений -->
         <div id="broadcast-tab" class="admin-tab-content hidden">
           <h2 class="text-2xl font-semibold mb-4">Рассылка уведомлений</h2>
           <textarea id="broadcast-message" rows="4" class="w-full p-2 bg-gray-700 rounded mb-4" placeholder="Введите сообщение для рассылки"></textarea>
@@ -123,7 +152,7 @@
   </div>
   
   <script>
-    // Константы для логина
+    // Логин и пароль для админ-панели
     const ADMIN_USERNAME = "admin";
     const ADMIN_PASSWORD = "qwerty";
     
@@ -136,8 +165,11 @@
         showAdminContent();
         showTab("tasks");
         loadTasks();
+        loadModeration();
         loadUsers();
         loadStats();
+        loadReviews();
+        loadComplaints();
         loadLogs();
       } else {
         document.getElementById("login-error").classList.remove("hidden");
@@ -150,14 +182,17 @@
       location.reload();
     }
     
-    // Проверка, выполнен ли вход
+    // Проверка входа
     function checkAdminLogin() {
       if (localStorage.getItem("adminLoggedIn") === "true") {
         showAdminContent();
         showTab("tasks");
         loadTasks();
+        loadModeration();
         loadUsers();
         loadStats();
+        loadReviews();
+        loadComplaints();
         loadLogs();
       } else {
         document.getElementById("login-container").classList.remove("hidden");
@@ -191,7 +226,7 @@
       tasksList.innerHTML = filteredTasks.map((task, index) => `
         <div class="card p-4 mb-2 bg-gray-800 rounded-lg">
           <p class="font-semibold">${task.text}</p>
-          <p class="text-sm text-gray-400">Категория: ${task.category} | Статус: ${task.status}</p>
+          <p class="text-sm text-gray-400">Категория: ${task.category} | Статус: ${task.status} | ${task.moderated ? "Одобрено" : "На модерации"}</p>
           <button onclick="viewTaskDetails(${index})" class="mt-2 px-2 py-1 bg-gray-500 rounded text-white">Подробнее</button>
           <div class="mt-2">
             <button onclick="adminEditTask(${index})" class="px-2 py-1 bg-blue-500 rounded text-white mr-2">Редактировать</button>
@@ -205,7 +240,63 @@
     function viewTaskDetails(index) {
       const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
       const task = tasks[index];
-      alert(`Детали задания:\n\nТекст: ${task.text}\nКатегория: ${task.category}\nСтатус: ${task.status}\nДополнительно: ${task.details || "Нет дополнительных данных"}`);
+      alert(`Детали задания:
+Текст: ${task.text}
+Категория: ${task.category}
+Статус: ${task.status}
+Модерация: ${task.moderated ? "Одобрено" : "На модерации"}
+Дополнительно: ${task.details || "Нет дополнительных данных"}`);
+    }
+    
+    // Загрузка заданий, ожидающих модерации (moderated === false)
+    function loadModeration() {
+      const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      const pending = tasks.filter(task => !task.moderated);
+      const modList = document.getElementById("moderation-list");
+      if (pending.length === 0) {
+        modList.innerHTML = "<p>Нет заданий на модерацию</p>";
+        return;
+      }
+      modList.innerHTML = pending.map((task, index) => `
+        <div class="card p-4 mb-2 bg-gray-800 rounded-lg">
+          <p class="font-semibold">${task.text}</p>
+          <p class="text-sm text-gray-400">Категория: ${task.category}</p>
+          <div class="mt-2">
+            <button onclick="approveTask(${index})" class="px-2 py-1 bg-green-500 rounded text-white mr-2">Одобрить</button>
+            <button onclick="rejectTask(${index})" class="px-2 py-1 bg-red-500 rounded text-white">Отклонить</button>
+          </div>
+        </div>
+      `).join("");
+    }
+    
+    // Одобрение задания (устанавливаем moderated = true)
+    function approveTask(modIndex) {
+      let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      const pending = tasks.filter(task => !task.moderated);
+      const taskToApprove = pending[modIndex];
+      if (taskToApprove) {
+        // Находим задание в общем списке
+        const index = tasks.findIndex(t => t.text === taskToApprove.text && t.createdAt === taskToApprove.createdAt);
+        tasks[index].moderated = true;
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        addLog(`Задание одобрено: ${tasks[index].text}`);
+        loadModeration();
+        loadTasks();
+      }
+    }
+    
+    // Отклонение задания (удаление)
+    function rejectTask(modIndex) {
+      let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      const pending = tasks.filter(task => !task.moderated);
+      const taskToReject = pending[modIndex];
+      if (taskToReject && confirm("Отклонить задание?")) {
+        tasks = tasks.filter(t => t !== taskToReject);
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        addLog(`Задание отклонено: ${taskToReject.text}`);
+        loadModeration();
+        loadTasks();
+      }
     }
     
     // Массовое удаление всех заданий
@@ -254,7 +345,7 @@
       loadUsers();
     }
     
-    // Загрузка статистики
+    // Загрузка статистики (анализ заданий и пользователей)
     function loadStats() {
       const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
       const users = JSON.parse(localStorage.getItem("users") || "[]");
@@ -262,10 +353,20 @@
       const totalTasks = tasks.length;
       const totalUsers = users.length;
       const bannedUsers = users.filter(u => u.banned).length;
+      // Пример аналитики: для исполнителей – количество выполненных заданий и средний рейтинг (из отзывов)
+      const completedTasks = tasks.filter(task => task.status === "Завершено").length;
+      const reviews = JSON.parse(localStorage.getItem("reviews") || "[]");
+      let avgRating = 0;
+      if (reviews.length > 0) {
+        const sum = reviews.reduce((s, rev) => s + Number(rev.rating), 0);
+        avgRating = (sum / reviews.length).toFixed(2);
+      }
       statsSummary.innerHTML = `
         <p>Всего заданий: ${totalTasks}</p>
         <p>Всего пользователей: ${totalUsers}</p>
         <p>Забанено пользователей: ${bannedUsers}</p>
+        <p>Выполнено заданий (исполнители): ${completedTasks}</p>
+        <p>Средний рейтинг (отзывы): ${avgRating}</p>
       `;
     }
     
@@ -287,7 +388,7 @@
         data: {
           labels: labels,
           datasets: [{
-            label: 'Количество заданий по категориям',
+            label: 'Задания по категориям',
             data: data,
             backgroundColor: 'rgba(59, 130, 246, 0.5)',
             borderColor: 'rgba(59, 130, 246, 1)',
@@ -300,7 +401,77 @@
       });
     }
     
-    // Загрузка журнала действий
+    // Загрузка отзывов из localStorage (ключ "reviews")
+    function loadReviews() {
+      const reviews = JSON.parse(localStorage.getItem("reviews") || "[]");
+      const reviewsList = document.getElementById("reviews-list");
+      if (reviews.length === 0) {
+        reviewsList.innerHTML = "<p>Нет отзывов</p>";
+        return;
+      }
+      reviewsList.innerHTML = reviews.map(review => `
+        <div class="card p-4 mb-2 bg-gray-800 rounded-lg">
+          <p class="font-semibold">Исполнитель: ${review.performerName || review.performerId}</p>
+          <p class="text-sm text-gray-400">Оценка: ${review.rating}</p>
+          <p class="text-sm text-gray-400">Комментарий: ${review.comment}</p>
+          <p class="text-xs text-gray-500">${new Date(review.timestamp).toLocaleString()}</p>
+        </div>
+      `).join("");
+    }
+    
+    // Загрузка жалоб из localStorage (ключ "complaints")
+    function loadComplaints() {
+      const complaints = JSON.parse(localStorage.getItem("complaints") || "[]");
+      const complaintsList = document.getElementById("complaints-list");
+      if (complaints.length === 0) {
+        complaintsList.innerHTML = "<p>Нет жалоб</p>";
+        return;
+      }
+      complaintsList.innerHTML = complaints.map((complaint, index) => `
+        <div class="card p-4 mb-2 bg-gray-800 rounded-lg">
+          <p class="font-semibold">Тип: ${complaint.type} | ID: ${complaint.targetId}</p>
+          <p class="text-sm text-gray-400">Сообщение: ${complaint.message}</p>
+          <p class="text-xs text-gray-500">${new Date(complaint.timestamp).toLocaleString()}</p>
+          <div class="mt-2">
+            <button onclick="resolveComplaint(${index})" class="px-2 py-1 bg-green-500 rounded text-white mr-2">Отметить как решённую</button>
+            <button onclick="deleteComplaint(${index})" class="px-2 py-1 bg-red-500 rounded text-white">Удалить</button>
+          </div>
+        </div>
+      `).join("");
+    }
+    
+    // Функция для решения жалобы
+    function resolveComplaint(index) {
+      let complaints = JSON.parse(localStorage.getItem("complaints") || "[]");
+      complaints[index].resolved = true;
+      localStorage.setItem("complaints", JSON.stringify(complaints));
+      addLog(`Жалоба по ID ${complaints[index].targetId} отмечена как решённая`);
+      loadComplaints();
+      showNotification("Жалоба отмечена как решённая");
+    }
+    
+    // Удаление жалобы
+    function deleteComplaint(index) {
+      if (confirm("Удалить жалобу?")) {
+        let complaints = JSON.parse(localStorage.getItem("complaints") || "[]");
+        addLog(`Жалоба удалена: ${complaints[index].message}`);
+        complaints.splice(index, 1);
+        localStorage.setItem("complaints", JSON.stringify(complaints));
+        loadComplaints();
+        showNotification("Жалоба удалена");
+      }
+    }
+    
+    // Очистка всех жалоб
+    function clearComplaints() {
+      if (confirm("Очистить все жалобы?")) {
+        localStorage.removeItem("complaints");
+        addLog("Все жалобы очищены");
+        loadComplaints();
+      }
+    }
+    
+    // Загрузка журнала действий из localStorage (ключ "adminLogs")
     function loadLogs() {
       const logs = JSON.parse(localStorage.getItem("adminLogs") || "[]");
       const logsList = document.getElementById("logs-list");
@@ -311,7 +482,7 @@
       logsList.innerHTML = logs.map(log => `<p>${log}</p>`).join("");
     }
     
-    // Добавление записи в журнал действий
+    // Добавление записи в журнал
     function addLog(message) {
       const logs = JSON.parse(localStorage.getItem("adminLogs") || "[]");
       const timestamp = new Date().toLocaleString();
@@ -320,7 +491,7 @@
       loadLogs();
     }
     
-    // Очистка журнала действий
+    // Очистка журнала
     function clearLogs() {
       if (confirm("Очистить журнал действий?")) {
         localStorage.removeItem("adminLogs");
@@ -365,7 +536,7 @@
       }
     }
     
-    // Админ-функции для пользователей
+    // Админ-функции для управления пользователями
     function toggleBan(userId) {
       const users = JSON.parse(localStorage.getItem("users") || "[]");
       const user = users.find(u => u.id === userId);
@@ -398,10 +569,11 @@
       setTimeout(() => notif.remove(), 3000);
     }
     
-    // Инициализация админ-панели при загрузке страницы
+    // Инициализация админ-панели
     window.addEventListener("load", () => {
       checkAdminLogin();
     });
   </script>
 </body>
 </html>
+
