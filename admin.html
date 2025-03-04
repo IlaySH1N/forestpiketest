@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Админ-панель</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/@tabler/icons@latest/iconfont/tabler-icons.min.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    /* Основные стили */
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: linear-gradient(135deg, #0f172a, #1e293b); 
+      min-height: 100vh; 
+      margin: 0; 
+      padding: 0 0 100px 0; /* нижний отступ для видимости элементов */
+      color: #e5e7eb;
+      overflow-x: hidden; /* запрет горизонтального скролла */
+    }
+    /* Скрываем скроллбар для эстетики */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    * {
+      scrollbar-width: none; /* для Firefox */
+    }
+    /* Контейнер для админ-контента */
+    #admin-container {
+      max-width: 1024px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #1f2937;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .admin-tab {
+      transition: background 0.3s;
+    }
+    .admin-tab:hover {
+      background: #2563eb;
+    }
+    .admin-tab-content {
+      padding: 16px;
+    }
+  </style>
+</head>
+<body class="p-4">
+  <div id="admin-container">
+    <h1 class="text-3xl font-bold mb-6 text-center">Админ-панель</h1>
+    <!-- Если пользователь не админ -->
+    <div id="access-denied" class="hidden text-center text-red-500 mb-4">
+      Доступ запрещён
+    </div>
+    <!-- Основной контент админ-панели -->
+    <div id="admin-content" class="hidden">
+      <!-- Навигация по вкладкам -->
+      <div class="mb-4 flex justify-center space-x-4">
+        <button id="tab-tasks" class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('tasks')">Задания</button>
+        <button id="tab-users" class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('users')">Пользователи</button>
+        <button id="tab-stats" class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('stats')">Статистика</button>
+      </div>
+      <!-- Контейнер для вкладок -->
+      <div id="tab-content">
+        <!-- Вкладка с заданиями -->
+        <div id="tasks-tab" class="admin-tab-content hidden">
+          <h2 class="text-2xl font-semibold mb-4">Список заданий</h2>
+          <div id="tasks-list"></div>
+        </div>
+        <!-- Вкладка с пользователями -->
+        <div id="users-tab" class="admin-tab-content hidden">
+          <h2 class="text-2xl font-semibold mb-4">Список пользователей</h2>
+          <div id="users-list"></div>
+        </div>
+        <!-- Вкладка со статистикой -->
+        <div id="stats-tab" class="admin-tab-content hidden">
+          <h2 class="text-2xl font-semibold mb-4">Статистика</h2>
+          <div id="stats-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Здесь указываем Telegram ID администратора – только 166571056 имеет доступ
+    const adminId = "166571056";
+
+    // Функция проверки, является ли пользователь админом
+    function isAdmin() {
+      const user = Telegram.WebApp.initDataUnsafe.user;
+      if (!user) return false;
+      return String(user.id) === adminId;
+    }
+    
+    // Если пользователь не админ – показываем сообщение
+    function showAccessDenied() {
+      document.getElementById("access-denied").classList.remove("hidden");
+      document.getElementById("admin-content").classList.add("hidden");
+    }
+    
+    // Если админ – показываем админ-контент
+    function showAdminContent() {
+      document.getElementById("access-denied").classList.add("hidden");
+      document.getElementById("admin-content").classList.remove("hidden");
+    }
+    
+    // Переключение вкладок админ-панели
+    function showTab(tabName) {
+      const tabs = document.querySelectorAll(".admin-tab-content");
+      tabs.forEach(tab => tab.classList.add("hidden"));
+      document.getElementById(tabName + "-tab").classList.remove("hidden");
+    }
+    
+    // Загрузка заданий из localStorage (ключ "tasks")
+    function loadTasks() {
+      const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      const tasksList = document.getElementById("tasks-list");
+      if (tasks.length === 0) {
+        tasksList.innerHTML = "<p>Нет заданий</p>";
+        return;
+      }
+      tasksList.innerHTML = tasks.map((task, index) => `
+        <div class="card p-4 mb-2 bg-gray-800 rounded-lg">
+          <p class="font-semibold">${task.text}</p>
+          <p class="text-sm text-gray-400">Категория: ${task.category} | Статус: ${task.status}</p>
+          <div class="mt-2">
+            <button onclick="adminEditTask(${index})" class="px-2 py-1 bg-blue-500 rounded text-white mr-2">Редактировать</button>
+            <button onclick="adminDeleteTask(${index})" class="px-2 py-1 bg-red-500 rounded text-white">Удалить</button>
+          </div>
+        </div>
+      `).join("");
+    }
+    
+    // Загрузка пользователей из localStorage (ключ "users")
+    function loadUsers() {
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const usersList = document.getElementById("users-list");
+      if (users.length === 0) {
+        usersList.innerHTML = "<p>Нет пользователей</p>";
+        return;
+      }
+      usersList.innerHTML = users.map(user => `
+        <div class="card p-4 mb-2 bg-gray-800 rounded-lg flex justify-between items-center">
+          <div>
+            <p class="font-semibold">${user.name || "Без имени"}</p>
+            <p class="text-sm text-gray-400">Email: ${user.email || "Нет email"}</p>
+            <p class="text-sm text-gray-400">Статус: ${user.banned ? "Забанен" : "Активен"}</p>
+            <p class="text-sm text-gray-400">Премиум: ${user.premium ? "Да" : "Нет"}</p>
+          </div>
+          <div class="flex flex-col space-y-2">
+            <button onclick="toggleBan('${user.id}')" class="px-2 py-1 bg-red-500 rounded text-white">
+              ${user.banned ? "Разбанить" : "Забанить"}
+            </button>
+            <button onclick="togglePremium('${user.id}')" class="px-2 py-1 bg-green-500 rounded text-white">
+              ${user.premium ? "Снять подписку" : "Дарить подписку"}
+            </button>
+          </div>
+        </div>
+      `).join("");
+    }
+    
+    // Загрузка статистики
+    function loadStats() {
+      const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const statsContent = document.getElementById("stats-content");
+      const totalTasks = tasks.length;
+      const totalUsers = users.length;
+      const bannedUsers = users.filter(u => u.banned).length;
+      statsContent.innerHTML = `
+        <p>Всего заданий: ${totalTasks}</p>
+        <p>Всего пользователей: ${totalUsers}</p>
+        <p>Забанено пользователей: ${bannedUsers}</p>
+      `;
+    }
+    
+    // Админ-функции для заданий
+    function adminEditTask(index) {
+      const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      const newText = prompt("Введите новый текст задания:", tasks[index].text);
+      if (newText) {
+        tasks[index].text = newText;
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        loadTasks();
+        showNotification("Задание обновлено");
+      }
+    }
+    
+    function adminDeleteTask(index) {
+      if (confirm("Удалить задание?")) {
+        const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+        tasks.splice(index, 1);
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        loadTasks();
+        showNotification("Задание удалено");
+      }
+    }
+    
+    // Админ-функции для пользователей
+    function toggleBan(userId) {
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const user = users.find(u => u.id === userId);
+      if (user) {
+        user.banned = !user.banned;
+        localStorage.setItem("users", JSON.stringify(users));
+        loadUsers();
+        showNotification(`Пользователь ${user.name} ${user.banned ? "забанен" : "разбанен"}`);
+      }
+    }
+    
+    function togglePremium(userId) {
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const user = users.find(u => u.id === userId);
+      if (user) {
+        user.premium = !user.premium;
+        localStorage.setItem("users", JSON.stringify(users));
+        loadUsers();
+        showNotification(`Подписка для ${user.name} ${user.premium ? "активирована" : "отключена"}`);
+      }
+    }
+    
+    function showNotification(message) {
+      const notif = document.createElement("div");
+      notif.className = "fixed top-4 left-1/2 transform -translate-x-1/2 bg-teal-500 text-white p-3 rounded-lg shadow-lg";
+      notif.textContent = message;
+      document.body.appendChild(notif);
+      setTimeout(() => notif.remove(), 3000);
+    }
+    
+    // Инициализация админ-панели
+    window.addEventListener("load", () => {
+      if (!isAdmin()) {
+        showAccessDenied();
+      } else {
+        showAdminContent();
+        showTab("tasks");
+        loadTasks();
+        loadUsers();
+        loadStats();
+      }
+    });
+  </script>
+</body>
+</html>
