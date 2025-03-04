@@ -4,9 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Админ-панель</title>
+  <!-- Подключаем Tailwind CSS для удобного стилизования -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://unpkg.com/@tabler/icons@latest/iconfont/tabler-icons.min.css" />
+  <!-- Подключаем Chart.js для построения графиков -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Подключаем Telegram WebApp JS -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/@tabler/icons@latest/iconfont/tabler-icons.min.css" />
   <style>
     /* Основные стили */
     body { 
@@ -14,7 +18,7 @@
       background: linear-gradient(135deg, #0f172a, #1e293b); 
       min-height: 100vh; 
       margin: 0; 
-      padding: 0 0 100px 0; /* нижний отступ для видимости элементов */
+      padding-bottom: 100px; /* нижний отступ для видимости элементов */
       color: #e5e7eb;
       overflow-x: hidden; /* запрет горизонтального скролла */
     }
@@ -29,7 +33,7 @@
     .card {
       background: #1f2937;
       border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .admin-tab {
       transition: background 0.3s;
@@ -55,7 +59,7 @@
   <div id="admin-container">
     <h1 class="text-3xl font-bold mb-6 text-center">Админ-панель</h1>
     
-    <!-- Форма логина (отображается, если админ не вошёл) -->
+    <!-- Форма логина (показывается, если adminLoggedIn не установлен) -->
     <div id="login-container" class="hidden">
       <h2 class="text-2xl font-semibold mb-4 text-center">Вход</h2>
       <input id="login-username" type="text" placeholder="Логин" class="w-full p-2 bg-gray-700 rounded mb-4" />
@@ -68,38 +72,62 @@
     <div id="admin-content" class="hidden">
       <!-- Навигация по вкладкам -->
       <div class="mb-4 flex justify-center space-x-4">
-        <button id="tab-tasks" class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('tasks')">Задания</button>
-        <button id="tab-users" class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('users')">Пользователи</button>
-        <button id="tab-stats" class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('stats')">Статистика</button>
+        <button class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('tasks')">Задания</button>
+        <button class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('users')">Пользователи</button>
+        <button class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('stats')">Статистика</button>
+        <button class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('logs')">Журнал</button>
+        <button class="admin-tab px-4 py-2 bg-blue-500 rounded-lg text-white" onclick="showTab('broadcast')">Рассылка</button>
         <button onclick="adminLogout()" class="admin-tab px-4 py-2 bg-red-500 rounded-lg text-white">Выйти</button>
       </div>
+      
       <!-- Контейнер для вкладок -->
       <div id="tab-content">
-        <!-- Вкладка с заданиями -->
+        <!-- Вкладка "Задания" -->
         <div id="tasks-tab" class="admin-tab-content hidden">
           <h2 class="text-2xl font-semibold mb-4">Список заданий</h2>
+          <!-- Фильтр заданий -->
+          <input id="task-search" type="text" placeholder="Поиск заданий" class="w-full p-2 bg-gray-700 rounded mb-4" oninput="loadTasks()">
+          <button onclick="deleteAllTasks()" class="mb-4 bg-red-500 px-4 py-2 rounded">Удалить все задания</button>
           <div id="tasks-list"></div>
         </div>
-        <!-- Вкладка с пользователями -->
+        
+        <!-- Вкладка "Пользователи" -->
         <div id="users-tab" class="admin-tab-content hidden">
           <h2 class="text-2xl font-semibold mb-4">Список пользователей</h2>
+          <button onclick="unbanAllUsers()" class="mb-4 bg-green-500 px-4 py-2 rounded">Разбанить всех пользователей</button>
           <div id="users-list"></div>
         </div>
-        <!-- Вкладка со статистикой -->
+        
+        <!-- Вкладка "Статистика" -->
         <div id="stats-tab" class="admin-tab-content hidden">
           <h2 class="text-2xl font-semibold mb-4">Статистика</h2>
-          <div id="stats-content"></div>
+          <div id="stats-summary" class="mb-4"></div>
+          <canvas id="stats-chart" class="bg-white rounded"></canvas>
+        </div>
+        
+        <!-- Вкладка "Журнал" -->
+        <div id="logs-tab" class="admin-tab-content hidden">
+          <h2 class="text-2xl font-semibold mb-4">Журнал действий</h2>
+          <div id="logs-list" class="overflow-y-auto max-h-64"></div>
+          <button onclick="clearLogs()" class="mt-4 bg-red-500 px-4 py-2 rounded">Очистить журнал</button>
+        </div>
+        
+        <!-- Вкладка "Рассылка" -->
+        <div id="broadcast-tab" class="admin-tab-content hidden">
+          <h2 class="text-2xl font-semibold mb-4">Рассылка уведомлений</h2>
+          <textarea id="broadcast-message" rows="4" class="w-full p-2 bg-gray-700 rounded mb-4" placeholder="Введите сообщение для рассылки"></textarea>
+          <button onclick="sendBroadcast()" class="w-full bg-blue-500 p-2 rounded text-white">Отправить уведомление</button>
         </div>
       </div>
     </div>
   </div>
   
   <script>
-    // Задаём логин и пароль для входа в админ-панель
+    // Константы для логина
     const ADMIN_USERNAME = "admin";
     const ADMIN_PASSWORD = "qwerty";
     
-    // Функция входа: проверяет логин и пароль, устанавливает флаг в localStorage
+    // Функция входа: проверка логина и пароля
     function adminLogin() {
       const username = document.getElementById("login-username").value;
       const password = document.getElementById("login-password").value;
@@ -110,18 +138,19 @@
         loadTasks();
         loadUsers();
         loadStats();
+        loadLogs();
       } else {
         document.getElementById("login-error").classList.remove("hidden");
       }
     }
     
-    // Функция выхода: удаляет флаг входа и перезагружает страницу
+    // Функция выхода
     function adminLogout() {
       localStorage.removeItem("adminLoggedIn");
       location.reload();
     }
     
-    // Если админ уже залогинен, показываем админ-контент; иначе — форму логина
+    // Проверка, выполнен ли вход
     function checkAdminLogin() {
       if (localStorage.getItem("adminLoggedIn") === "true") {
         showAdminContent();
@@ -129,12 +158,13 @@
         loadTasks();
         loadUsers();
         loadStats();
+        loadLogs();
       } else {
         document.getElementById("login-container").classList.remove("hidden");
       }
     }
     
-    // Показываем админ-контент
+    // Показать админ-контент
     function showAdminContent() {
       document.getElementById("login-container").classList.add("hidden");
       document.getElementById("admin-content").classList.remove("hidden");
@@ -145,26 +175,46 @@
       const tabs = document.querySelectorAll(".admin-tab-content");
       tabs.forEach(tab => tab.classList.add("hidden"));
       document.getElementById(tabName + "-tab").classList.remove("hidden");
+      if (tabName === "stats") updateChart();
     }
     
     // Загрузка заданий из localStorage (ключ "tasks")
     function loadTasks() {
       const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      const searchTerm = document.getElementById("task-search").value.toLowerCase();
+      const filteredTasks = tasks.filter(task => task.text.toLowerCase().includes(searchTerm));
       const tasksList = document.getElementById("tasks-list");
-      if (tasks.length === 0) {
+      if (filteredTasks.length === 0) {
         tasksList.innerHTML = "<p>Нет заданий</p>";
         return;
       }
-      tasksList.innerHTML = tasks.map((task, index) => `
+      tasksList.innerHTML = filteredTasks.map((task, index) => `
         <div class="card p-4 mb-2 bg-gray-800 rounded-lg">
           <p class="font-semibold">${task.text}</p>
           <p class="text-sm text-gray-400">Категория: ${task.category} | Статус: ${task.status}</p>
+          <button onclick="viewTaskDetails(${index})" class="mt-2 px-2 py-1 bg-gray-500 rounded text-white">Подробнее</button>
           <div class="mt-2">
             <button onclick="adminEditTask(${index})" class="px-2 py-1 bg-blue-500 rounded text-white mr-2">Редактировать</button>
             <button onclick="adminDeleteTask(${index})" class="px-2 py-1 bg-red-500 rounded text-white">Удалить</button>
           </div>
         </div>
       `).join("");
+    }
+    
+    // Функция просмотра деталей задания
+    function viewTaskDetails(index) {
+      const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      const task = tasks[index];
+      alert(`Детали задания:\n\nТекст: ${task.text}\nКатегория: ${task.category}\nСтатус: ${task.status}\nДополнительно: ${task.details || "Нет дополнительных данных"}`);
+    }
+    
+    // Массовое удаление всех заданий
+    function deleteAllTasks() {
+      if (confirm("Удалить все задания?")) {
+        localStorage.removeItem("tasks");
+        addLog("Удалены все задания");
+        loadTasks();
+      }
     }
     
     // Загрузка пользователей из localStorage (ключ "users")
@@ -195,28 +245,109 @@
       `).join("");
     }
     
+    // Массовое разблокирование всех пользователей
+    function unbanAllUsers() {
+      let users = JSON.parse(localStorage.getItem("users") || "[]");
+      users.forEach(user => user.banned = false);
+      localStorage.setItem("users", JSON.stringify(users));
+      addLog("Разбанены все пользователи");
+      loadUsers();
+    }
+    
     // Загрузка статистики
     function loadStats() {
       const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
       const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const statsContent = document.getElementById("stats-content");
+      const statsSummary = document.getElementById("stats-summary");
       const totalTasks = tasks.length;
       const totalUsers = users.length;
       const bannedUsers = users.filter(u => u.banned).length;
-      statsContent.innerHTML = `
+      statsSummary.innerHTML = `
         <p>Всего заданий: ${totalTasks}</p>
         <p>Всего пользователей: ${totalUsers}</p>
         <p>Забанено пользователей: ${bannedUsers}</p>
       `;
     }
     
-    // Админ-функции для заданий
+    // Обновление графика статистики с помощью Chart.js
+    let statsChart;
+    function updateChart() {
+      const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      const categoryCounts = {};
+      tasks.forEach(task => {
+        categoryCounts[task.category] = (categoryCounts[task.category] || 0) + 1;
+      });
+      const labels = Object.keys(categoryCounts);
+      const data = Object.values(categoryCounts);
+      
+      const ctx = document.getElementById('stats-chart').getContext('2d');
+      if (statsChart) { statsChart.destroy(); }
+      statsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Количество заданий по категориям',
+            data: data,
+            backgroundColor: 'rgba(59, 130, 246, 0.5)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+    
+    // Загрузка журнала действий
+    function loadLogs() {
+      const logs = JSON.parse(localStorage.getItem("adminLogs") || "[]");
+      const logsList = document.getElementById("logs-list");
+      if (logs.length === 0) {
+        logsList.innerHTML = "<p>Журнал пуст</p>";
+        return;
+      }
+      logsList.innerHTML = logs.map(log => `<p>${log}</p>`).join("");
+    }
+    
+    // Добавление записи в журнал действий
+    function addLog(message) {
+      const logs = JSON.parse(localStorage.getItem("adminLogs") || "[]");
+      const timestamp = new Date().toLocaleString();
+      logs.push(`[${timestamp}] ${message}`);
+      localStorage.setItem("adminLogs", JSON.stringify(logs));
+      loadLogs();
+    }
+    
+    // Очистка журнала действий
+    function clearLogs() {
+      if (confirm("Очистить журнал действий?")) {
+        localStorage.removeItem("adminLogs");
+        loadLogs();
+      }
+    }
+    
+    // Функция отправки уведомления (рассылка)
+    function sendBroadcast() {
+      const message = document.getElementById("broadcast-message").value;
+      if (!message) {
+        alert("Введите сообщение для рассылки");
+        return;
+      }
+      addLog(`Отправлено уведомление: ${message}`);
+      alert("Уведомление отправлено");
+      document.getElementById("broadcast-message").value = "";
+    }
+    
+    // Админ-функции для редактирования и удаления заданий
     function adminEditTask(index) {
       const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
       const newText = prompt("Введите новый текст задания:", tasks[index].text);
       if (newText) {
         tasks[index].text = newText;
         localStorage.setItem("tasks", JSON.stringify(tasks));
+        addLog(`Задание отредактировано: ${newText}`);
         loadTasks();
         showNotification("Задание обновлено");
       }
@@ -225,8 +356,10 @@
     function adminDeleteTask(index) {
       if (confirm("Удалить задание?")) {
         const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+        const deletedTask = tasks[index].text;
         tasks.splice(index, 1);
         localStorage.setItem("tasks", JSON.stringify(tasks));
+        addLog(`Задание удалено: ${deletedTask}`);
         loadTasks();
         showNotification("Задание удалено");
       }
@@ -239,6 +372,7 @@
       if (user) {
         user.banned = !user.banned;
         localStorage.setItem("users", JSON.stringify(users));
+        addLog(`Пользователь ${user.name} ${user.banned ? "забанен" : "разбанен"}`);
         loadUsers();
         showNotification(`Пользователь ${user.name} ${user.banned ? "забанен" : "разбанен"}`);
       }
@@ -250,6 +384,7 @@
       if (user) {
         user.premium = !user.premium;
         localStorage.setItem("users", JSON.stringify(users));
+        addLog(`Подписка для ${user.name} ${user.premium ? "активирована" : "отключена"}`);
         loadUsers();
         showNotification(`Подписка для ${user.name} ${user.premium ? "активирована" : "отключена"}`);
       }
@@ -263,11 +398,10 @@
       setTimeout(() => notif.remove(), 3000);
     }
     
-    // Инициализация админ-панели
+    // Инициализация админ-панели при загрузке страницы
     window.addEventListener("load", () => {
       checkAdminLogin();
     });
   </script>
 </body>
 </html>
-
