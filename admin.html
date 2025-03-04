@@ -19,12 +19,8 @@
       overflow-x: hidden; /* запрет горизонтального скролла */
     }
     /* Скрываем скроллбар для эстетики */
-    ::-webkit-scrollbar {
-      display: none;
-    }
-    * {
-      scrollbar-width: none; /* для Firefox */
-    }
+    ::-webkit-scrollbar { display: none; }
+    * { scrollbar-width: none; }
     /* Контейнер для админ-контента */
     #admin-container {
       max-width: 1024px;
@@ -59,7 +55,7 @@
   <div id="admin-container">
     <h1 class="text-3xl font-bold mb-6 text-center">Админ-панель</h1>
     
-    <!-- Форма логина, если админ ещё не вошёл -->
+    <!-- Форма логина (отображается, если админ не вошёл) -->
     <div id="login-container" class="hidden">
       <h2 class="text-2xl font-semibold mb-4 text-center">Вход</h2>
       <input id="login-username" type="text" placeholder="Логин" class="w-full p-2 bg-gray-700 rounded mb-4" />
@@ -68,7 +64,7 @@
       <div id="login-error" class="mt-2 text-center text-red-500 hidden">Неверный логин или пароль</div>
     </div>
     
-    <!-- Если вход выполнен, показываем админ-контент -->
+    <!-- Админ-контент (отображается после успешного входа) -->
     <div id="admin-content" class="hidden">
       <!-- Навигация по вкладкам -->
       <div class="mb-4 flex justify-center space-x-4">
@@ -97,12 +93,13 @@
       </div>
     </div>
   </div>
+  
   <script>
-    // Логин и пароль для входа в админ-панель
+    // Задаём логин и пароль для входа в админ-панель
     const ADMIN_USERNAME = "admin";
     const ADMIN_PASSWORD = "qwerty";
     
-    // Функция входа: проверяет логин и пароль, если верно – сохраняет флаг в localStorage
+    // Функция входа: проверяет логин и пароль, устанавливает флаг в localStorage
     function adminLogin() {
       const username = document.getElementById("login-username").value;
       const password = document.getElementById("login-password").value;
@@ -118,13 +115,13 @@
       }
     }
     
-    // Функция выхода: удаляет флаг админ-входа
+    // Функция выхода: удаляет флаг входа и перезагружает страницу
     function adminLogout() {
       localStorage.removeItem("adminLoggedIn");
       location.reload();
     }
     
-    // Если админ уже залогинен, показываем админ-контент, иначе форму логина
+    // Если админ уже залогинен, показываем админ-контент; иначе — форму логина
     function checkAdminLogin() {
       if (localStorage.getItem("adminLoggedIn") === "true") {
         showAdminContent();
@@ -137,7 +134,13 @@
       }
     }
     
-    // Переключение вкладок админ-панели
+    // Показываем админ-контент
+    function showAdminContent() {
+      document.getElementById("login-container").classList.add("hidden");
+      document.getElementById("admin-content").classList.remove("hidden");
+    }
+    
+    // Переключение вкладок
     function showTab(tabName) {
       const tabs = document.querySelectorAll(".admin-tab-content");
       tabs.forEach(tab => tab.classList.add("hidden"));
@@ -267,3 +270,4 @@
   </script>
 </body>
 </html>
+
